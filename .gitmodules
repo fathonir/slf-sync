@@ -1,0 +1,6 @@
+[submodule "application/third_party/smarty"]
+	path = application/third_party/smarty
+	url = https://github.com/smarty-php/smarty.git
+[submodule "application/third_party/nusoap"]
+	path = application/third_party/nusoap
+	url = https://github.com/tinoadams/NuSOAP.git
