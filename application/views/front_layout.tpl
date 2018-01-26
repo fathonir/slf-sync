@@ -6,12 +6,9 @@
 		<meta name="description" content="Sistem Langitan-Feeder Sync" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta name="msapplication-config" content="none"/>
-
-		<!-- Source Sans Pro Font -->
-		<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro' rel='stylesheet' type='text/css'>
 		
 		<!-- Bootstrap -->
-		<link href="{base_url('assets/css/bootstrap.min.css')}" rel="stylesheet">
+		<link href="{base_url('assets/bootstrap/css/bootstrap.min.css')}" rel="stylesheet">
 		
 		<style type="text/css">
 			body { padding-top: 40px; }
@@ -45,11 +42,11 @@
 		<div class="container">
 		{block name='body-content'}{/block}
 		</div>
-
+		
 		<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-		<script src="{base_url('assets/js/jquery-1.12.3.min.js')}"></script>
+		<script src="{base_url('assets/jquery/jquery-1.12.4.min.js')}"></script>
 		<!-- Include all compiled plugins (below), or include individual files as needed -->
-		<script src="{base_url('assets/js/bootstrap.min.js')}"></script>
+		<script src="{base_url('assets/bootstrap/js/bootstrap.min.js')}"></script>
 		{block name='footer-script'}{/block}
 	</body>
 	<!-- {$smarty.server.REMOTE_ADDR} -->

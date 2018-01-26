@@ -69,14 +69,6 @@
 							</select>
 						</div>
 					</div>
-							
-					<!-- Select Basic -->
-					<div class="form-group">
-						<label class="col-md-2 control-label" for="selectmultiple">Kelas</label>
-						<div class="col-md-6">
-							<select name="id_kelas_mk" class="form-control" required><option value="0">-</option></select>
-						</div>
-					</div>
 
 					<!-- Button -->
 					<div class="form-group">
@@ -102,65 +94,23 @@
 			
 			$('input[type=submit]').prop('disabled', true);
 			
-			var refreshTable = function(kodeProdi, semester, id_kelas_mk) {
-				var url = '{site_url('sync/nilai_data')}/'+kodeProdi+'/'+semester+'/'+id_kelas_mk;
+			var refreshTable = function(kodeProdi, semester) {
 				
-				if (kodeProdi && semester && id_kelas_mk)
+				if (kodeProdi && semester)
 				{
-					$.ajax({
-						dataType: "json",
-						url: url,
-						beforeSend: function (xhr) {
-							$('input[type=submit]').prop('disabled', true);
-							$('body').css('cursor', 'progress');
-						},
-						success: function (data, textStatus, jqXHR) {
-							$('tr.jumlahdata td:eq(1)').text(data.feeder);
-							$('tr.jumlahdata td:eq(2)').text(data.langitan);
-							$('tr.jumlahdata td:eq(3)').text(data.linked);
-							$('tr.jumlahdata td:eq(5)').text('∆' + data.update);
-							$('tr.jumlahdata td:eq(6)').text('+' + data.insert);
-							$("input[type=submit]").prop('disabled', false);
-							$('body').css('cursor', 'default');
-						}
-					});
+					$("input[type=submit]").prop('disabled', false);
 				}
 				
-			};
-			
-			var ambilKelas = function(kodeProdi, semester) {
-				if (kodeProdi && semester) {
-					$.ajax({
-						dataType: "json",
-						url: '{site_url('sync/ambil_kelas')}/'+kodeProdi+'/'+semester,
-						beforeSend: function (xhr) {
-							$('select[name=id_kelas_mk]').html('');
-							$('select[name=id_kelas_mk]').append('<option value="">[Pilih Kelas]</option>');
-						},
-						success: function (data, textStatus, jqXHR) {
-							// Insert ke combo
-							$.each(data, function(key, val) {
-                                if (val.PERLU_SYNC == 0)
-                                    $('select[name=id_kelas_mk]').append('<option value="'+val.ID_KELAS_MK+'">'+(key + 1)+'. '+val.NM_KELAS+' Peserta: '+val.PESERTA+' Ada Nilai: '+val.ADA_NILAI+'</option>');
-                                else
-                                    $('select[name=id_kelas_mk]').append('<option value="'+val.ID_KELAS_MK+'" style="background-color: #5cb85c; color: #fff">'+(key + 1)+'. '+val.NM_KELAS+' Peserta: '+val.PESERTA+' Ada Nilai: '+val.ADA_NILAI+'</option>');
-							});
-						}
-					});
-				}
 			};
 			
 			$('select[name=kode_prodi]').on('change', function(){
-				ambilKelas($('select[name=kode_prodi]').val(), $('select[name=semester]').val());
+				refreshTable($('select[name=kode_prodi]').val(), $('select[name=semester]').val());
 			});
 			
 			$('select[name=semester]').on('change', function(){
-				ambilKelas($('select[name=kode_prodi]').val(), $('select[name=semester]').val());
+				refreshTable($('select[name=kode_prodi]').val(), $('select[name=semester]').val());
 			});
 			
-			$('select[name=id_kelas_mk]').on('change', function() {
-				refreshTable($('select[name=kode_prodi]').val(), $('select[name=semester]').val(), $('select[name=id_kelas_mk]').val());
-			});
 		});
 	</script>
 {/block}

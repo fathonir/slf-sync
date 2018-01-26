@@ -172,6 +172,11 @@ class Feeder
 	{
 		return $this->client->getProxy()->GetExpired($token);
 	}
+	
+	public function GetListPenugasanDosen($token, $filter = null, $order = null, $limit = null, $offset = null)
+	{
+		return $this->client->getProxy()->GetListPenugasanDosen($token, $filter, $order, $limit, $offset);
+	}
 }
 
 /* End of file Feeder.php */

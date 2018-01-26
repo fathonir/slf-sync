@@ -40,5 +40,6 @@ WHERE
 	pt.npsn = '@npsn' AND
 	ps.kode_program_studi = '@kode_prodi' AND
 	m.thn_angkatan_mhs = '@angkatan' AND
-	m.id_mhs NOT IN (SELECT id_mhs FROM feeder_mahasiswa_pt)
+	m.fd_id_reg_pd IS NULL
+	-- m.id_mhs NOT IN (SELECT id_mhs FROM feeder_mahasiswa_pt)
 ORDER BY m.nim_mhs ASC

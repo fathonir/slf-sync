@@ -42,9 +42,10 @@ class Remotedb
 		}
 		
 		curl_setopt($this->ch, CURLOPT_POSTFIELDS, $param);
-		
+
 		if ($as_array)
 		{
+			// return $this->exec();
 			$result = json_decode($this->exec(), true);
 			return $result;
 		}

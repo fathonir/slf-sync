@@ -19,7 +19,7 @@ class Sync_del extends MY_Controller
 
 		// Inisialisasi Token dan Satuan Pendidikan
 		$this->token = $this->session->userdata('token');
-		$this->satuan_pendidikan = xcache_get(FEEDER_SATUAN_PENDIDIKAN);
+		$this->satuan_pendidikan = $this->session->userdata(FEEDER_SATUAN_PENDIDIKAN);
 		
 		// Inisialisasi URL Feeder
 		$this->load->library('feeder', array('url' => $this->session->userdata('wsdl')));
@@ -119,7 +119,7 @@ class Sync_del extends MY_Controller
 			$feeder_result = $this->feeder->GetRecordset($this->token, FEEDER_KULIAH_MAHASISWA.'.raw', "p.id_smt = '{$semester['ID_SMT']}'");
 			
 			// simpan ke cache
-			xcache_set('data_delete_set', $feeder_result['result']);
+			$this->session->set_userdata('data_delete_set', $feeder_result['result']);
 			
 			$result['message'] = 'Ambil data Feeder yang akan di proses Delete. Jumlah data: ' . count($feeder_result['result']);
 			$result['status'] = SYNC_STATUS_PROSES;
@@ -133,7 +133,7 @@ class Sync_del extends MY_Controller
 			$index_proses = isset($_POST['index_proses']) ? $_POST['index_proses'] : 0;
 			
 			// Ambil dari cache
-			$data_delete_set = xcache_get('data_delete_set');
+			$data_delete_set = $this->session->userdata('data_delete_set');
 			$jumlah_delete = count($data_delete_set);
 			
 			// Waktu Sinkronisasi
@@ -225,7 +225,7 @@ class Sync_del extends MY_Controller
 			$feeder_result = $this->feeder->GetDeletedRecordset($this->token, FEEDER_KULIAH_MAHASISWA.'.raw', "p.id_smt = '{$semester['ID_SMT']}'");
 			
 			// simpan ke cache
-			xcache_set('deleted_data_set', $feeder_result['result']);
+			$this->session->set_userdata('deleted_data_set', $feeder_result['result']);
 			
 			$result['message'] = 'Ambil data Feeder yang akan di proses Restore. Jumlah data: ' . count($feeder_result['result']);
 			$result['status'] = SYNC_STATUS_PROSES;
@@ -239,7 +239,7 @@ class Sync_del extends MY_Controller
 			$index_proses = isset($_POST['index_proses']) ? $_POST['index_proses'] : 0;
 			
 			// Ambil dari cache
-			$deleted_data_set = xcache_get('deleted_data_set');
+			$deleted_data_set = $this->session->userdata('deleted_data_set');
 			$jumlah_delete = count($deleted_data_set);
 			
 			// Waktu Sinkronisasi
@@ -247,7 +247,7 @@ class Sync_del extends MY_Controller
 			
 			// Reset Counter
 			if ($index_proses == 0)
-				xcache_set('counter', 0); 
+				$this->session->set_userdata('counter', 0); 
 			
 			// --------------------------------
 			// Proses Delete

@@ -3,7 +3,7 @@
 	<div class="row">
 		<div class="col-md-12">
 			<div class="page-header">
-				<h2>Sinkronisasi <u><b>{$jenis_sinkronisasi}</b></u></h2>
+				<h3>Sinkronisasi <u><b>{$jenis_sinkronisasi}</b></u></h3>
 			</div>
 			
 			<form id="form1" class="form-horizontal">
@@ -42,9 +42,9 @@
 		function syncMessage(syncData)
 		{	
 			/* Sinkronisasi Selesai */
-			if (syncData.status == 'done')
+			if (syncData.status === 'done')
 			{
-				$('#log').append('['+ (new Date()).toLocaleString() + '] ' + syncData.message+'\r\n');
+				$('#log').append('['+ (new Date()).toLocaleString() + '] ' + syncData.message+'\n');
 				$("#log").scrollTop($("#log")[0].scrollHeight);
 				
 				$('#syncButton').removeAttr('disabled');
@@ -52,9 +52,9 @@
 				$('#loadingImg').hide();
 			}
 			/* Sinkronisasi masih ada */
-			else if (syncData.status == 'proses')
+			else if (syncData.status === 'proses')
 			{
-				$('#log').append('['+ (new Date()).toLocaleString() + '] ' + syncData.message+'\r\n');
+				$('#log').append('['+ (new Date()).toLocaleString() + '] ' + syncData.message+'\n');
 				$("#log").scrollTop($("#log")[0].scrollHeight);
 				
 				var ajaxHandle = $.ajax({
@@ -64,8 +64,8 @@
 					dataType: 'json'
 				}).done(function(data){
 					syncMessage(data);
-				}).fail(function(){
-					$('#log').append('['+ (new Date()).toLocaleString() + '] FAIL !!\r\n');
+				}).fail(function(jqXHR, textStatus, errorThrown){
+					$('#log').append('['+ (new Date()).toLocaleString() + '] Fail : ' + jqXHR.responseText+'\n');
 					
 					$('#syncButton').removeAttr('disabled');
 					$('#stopButton').attr('disabled', 'disabled');
@@ -83,7 +83,7 @@
 		
 		$('#syncButton').on('click', function() {
 			
-			$('#log').append('['+ (new Date()).toLocaleString() + '] Mulai sinkronisasi ...\r\n');
+			$('#log').append('['+ (new Date()).toLocaleString() + '] Mulai sinkronisasi ...\n');
 			$("#log").scrollTop($("#log")[0].scrollHeight);
 			
 			$('#syncButton').attr('disabled', 'disabled');
@@ -100,8 +100,11 @@
 				}
 			}).done(function(data) {
 				syncMessage(data);
-			}).fail(function() {
-				
+			}).fail(function(jqXHR) {
+				$('#log').append('['+ (new Date()).toLocaleString() + '] Fail : ' + jqXHR.responseText + '\n');
+				$('#syncButton').removeAttr('disabled');
+				$('#stopButton').attr('disabled', 'disabled');
+				$('#loadingImg').hide();
 			}).always(function() {
 				
 			});
@@ -115,7 +118,7 @@
 				ajaxReq.abort();
 			});
 			
-			$('#log').append('['+ (new Date()).toLocaleString() + '] Stop by user !\r\n');
+			$('#log').append('['+ (new Date()).toLocaleString() + '] Stop by user !\n');
 			$("#log").scrollTop($("#log")[0].scrollHeight);
 			
 			$('#syncButton').removeAttr('disabled');

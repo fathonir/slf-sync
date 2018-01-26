@@ -12,7 +12,7 @@ SELECT
     k.sks_pilihan AS jml_sks_pilihan,
     ps.fd_id_sms AS id_sms,
     j.id_jenjang_pendidikan_feeder AS id_jenj_didik,
-    s.thn_akademik_semester||decode(s.nm_semester, 'Ganjil','1', 'Genap','2') AS id_smt_berlaku
+    s.thn_akademik_semester||decode(s.nm_semester, 'Ganjil','1', 'Genap','2') AS id_smt
 FROM kurikulum k
 JOIN semester s ON s.id_semester = k.id_semester_mulai
 JOIN program_studi ps ON ps.id_program_studi = k.id_program_studi

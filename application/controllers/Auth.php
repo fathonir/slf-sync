@@ -1,10 +1,16 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
+/**
+ * @property Remotedb $rdb 
+ */
 class Auth extends MY_Controller
 {	
 	public function __construct()
 	{
 		parent::__construct();
+		
+		// Inisialisasi Library RemoteDB
+		$this->load->library('remotedb', NULL, 'rdb');
 	}
 
 	function login()
@@ -45,20 +51,38 @@ class Auth extends MY_Controller
 			}
 			else // simpan token
 			{
-				// Status Sandbox
-				if ($this->input->post('mode') == 1)
-					$this->session->set_userdata('is_sandbox', FALSE);
-				else if ($this->input->post('mode') == 2)
-					$this->session->set_userdata('is_sandbox', TRUE);
 				
-				$this->session->set_userdata('wsdl', $wsdl);
-				$this->session->set_userdata('token', $result);
-				$this->session->set_userdata('langitan', $langitan);
-				$this->session->set_userdata('username', $username);
-				$this->session->set_userdata('password', $password);
-				$this->session->set_userdata('is_loggedin', TRUE);
+				//Set alamat langitan
+				$this->rdb->set_url($langitan);
 				
-				redirect('home');
+				// Ambil data perguruan tinggi
+				$pt_set = $this->rdb->QueryToArray("SELECT * FROM perguruan_tinggi WHERE npsn = '{$username}'");
+				
+				if (count($pt_set) != 1)
+				{
+					$this->smarty->assign('error_message', "Kode PT di Langitan belum di set");
+					$this->smarty->display('front/index.tpl');
+				}
+				else
+				{
+					// Status Sandbox
+					if ($this->input->post('mode') == 1)
+						$this->session->set_userdata('is_sandbox', FALSE);
+					else if ($this->input->post('mode') == 2)
+						$this->session->set_userdata('is_sandbox', TRUE);
+
+					$this->session->set_userdata('wsdl', $wsdl);
+					$this->session->set_userdata('token', $result);
+					$this->session->set_userdata('langitan', $langitan);
+					$this->session->set_userdata('username', $username);
+					$this->session->set_userdata('password', $password);
+					$this->session->set_userdata('is_loggedin', TRUE);
+					
+					// Data perguruan tinggi langitan
+					$this->session->set_userdata('pt', array_change_key_case($pt_set[0]));
+
+					redirect('home');
+				}
 			}
 		}
 	}

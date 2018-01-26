@@ -6,6 +6,7 @@
  * @property string $npsn Kode Perguruan Tinggi
  * @property array $satuan_pendidikan Row: satuan_pendidikan
  * @property Langitan_model $langitan_model
+ * @property PerguruanTinggi_model $pt
  */
 class Sync extends MY_Controller 
 {
@@ -29,6 +30,9 @@ class Sync extends MY_Controller
 		
 		// Inisialisasi Langitan_model
 		$this->load->model('langitan_model');
+		
+		// Inisialisasi Perguruan Tinggi
+		$this->pt = $this->session->userdata('pt');
 	}
 	
 	/**
@@ -262,10 +266,12 @@ class Sync extends MY_Controller
 				$mahasiswa_pt_insert = array_change_key_case($mahasiswa_pt_insert_set[$index_proses], CASE_LOWER);
 				
 				// Simpan id_mhs untuk update data di langitan
-				$id_mhs = $mahasiswa_insert['id_mhs'];
+				$id_mhs			= $mahasiswa_insert['id_mhs'];
+				$id_pengguna	= $mahasiswa_insert['id_pengguna'];
 				
 				// Hilangkan id_mhs
 				unset($mahasiswa_insert['id_mhs']);
+				unset($mahasiswa_insert['id_pengguna']);
 				unset($mahasiswa_pt_insert['id_mhs']);
 				
 				// Cleansing data
@@ -391,13 +397,16 @@ class Sync extends MY_Controller
 						$is_sandbox = ($this->session->userdata('is_sandbox') == TRUE) ? '1' : '0';
 						
 						// Melakukan update ke DB Langitan id_pd dan id_reg_pd hasil insert
-						$this->rdb->Query(
-							"INSERT INTO feeder_mahasiswa (ID_PD, ID_MHS, LAST_SYNC, LAST_UPDATE, IS_SANDBOX) 
-								VALUES ('{$mahasiswa_pt_insert['id_pd']}', {$id_mhs}, to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS'), to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS'), {$is_sandbox})");
+						//$this->rdb->Query(
+						//	"INSERT INTO feeder_mahasiswa (ID_PD, ID_MHS, LAST_SYNC, LAST_UPDATE, IS_SANDBOX) 
+						//		VALUES ('{$mahasiswa_pt_insert['id_pd']}', {$id_mhs}, to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS'), to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS'), {$is_sandbox})");
+						$this->rdb->Query("UPDATE pengguna SET fd_id_pd = '{$mahasiswa_pt_insert['id_pd']}', fd_sync_on = to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS') WHERE id_pengguna = {$id_pengguna}");		
 						
-						$this->rdb->Query(
-							"INSERT INTO feeder_mahasiswa_pt (ID_REG_PD, ID_MHS, LAST_SYNC, LAST_UPDATE, IS_SANDBOX) 
-								VALUES ('{$insert_pt_result['result']['id_reg_pd']}', {$id_mhs}, to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS'), to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS'), {$is_sandbox})");
+						//$this->rdb->Query(
+						//	"INSERT INTO feeder_mahasiswa_pt (ID_REG_PD, ID_MHS, LAST_SYNC, LAST_UPDATE, IS_SANDBOX) 
+						//		VALUES ('{$insert_pt_result['result']['id_reg_pd']}', {$id_mhs}, to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS'), to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS'), {$is_sandbox})");
+								
+						$this->rdb->Query("UPDATE mahasiswa SET fd_id_reg_pd = '{$insert_pt_result['result']['id_reg_pd']}', fd_sync_on = to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS') WHERE id_mhs = {$id_mhs}");
 					}
 					else // saat insert mahasiswa_pt gagal
 					{
@@ -1810,7 +1819,10 @@ class Sync extends MY_Controller
 
 		// Ambil data ajar dosen / pengampu mk
 		$sql_ajar_dosen_raw = file_get_contents(APPPATH.'models/sql/ajar-dosen-data.sql');
-		$sql_ajar_dosen = strtr($sql_ajar_dosen_raw, array('@npsn' => $this->satuan_pendidikan['npsn'], '@kode_prodi' => $kode_prodi));
+		$sql_ajar_dosen = strtr($sql_ajar_dosen_raw, array(
+			'@npsn' => $this->satuan_pendidikan['npsn'], 
+			'@kode_prodi' => $kode_prodi,
+			'@id_semester' => $id_semester));
 		$data_set = $this->rdb->QueryToArray($sql_ajar_dosen);
 			
 		$jumlah['langitan'] = $data_set[0]['JUMLAH'];
@@ -2090,6 +2102,34 @@ class Sync extends MY_Controller
 		echo json_encode($jumlah);
 	}
 	
+	public function nilai_per_prodi()
+	{
+		// Ambil jumlah nilai di feeder
+		$response = $this->feeder->GetCountRecordset($this->token, FEEDER_NILAI, null);
+		$jumlah['feeder'] = $response['result'];
+		
+		// Ambil data nilai
+		$sql_nilai_raw = file_get_contents(APPPATH.'models/sql/nilai.sql');
+		$sql_nilai = strtr($sql_nilai_raw, array('@npsn' => $this->satuan_pendidikan['npsn']));
+		$data_set = $this->rdb->QueryToArray($sql_nilai);
+		
+		$jumlah['langitan'] = $data_set[0]['JUMLAH'];
+		$jumlah['linked'] = $data_set[1]['JUMLAH'];
+		$jumlah['update'] = $data_set[2]['JUMLAH'];
+		$jumlah['insert'] = $data_set[3]['JUMLAH'];
+		
+		$this->smarty->assign('jumlah', $jumlah);
+		
+		// Ambil program studi
+		$sql_program_studi_raw = file_get_contents(APPPATH.'models/sql/program-studi.sql');
+		$sql_program_studi = strtr($sql_program_studi_raw, array('@npsn' => $this->satuan_pendidikan['npsn']));
+		$program_studi_set = $this->rdb->QueryToArray($sql_program_studi);
+		$this->smarty->assign('program_studi_set', $program_studi_set);
+		
+		$this->smarty->assign('url_sync', site_url('sync/start/'.$this->uri->segment(2)));
+		$this->smarty->display('sync/'.$this->uri->segment(2).'.tpl');
+	}
+	
 	private function proses_nilai()
 	{
 		$result = array('status'=> '', 'time' => '', 'message' => '', 'nextUrl' => site_url('sync/proses/'. $this->uri->segment(3)), 'params'	=> '');
@@ -2171,6 +2211,7 @@ class Sync extends MY_Controller
 				$mhs				= $data_insert['mhs'];
 				$nilai_huruf		= $data_insert['nilai_huruf'];
 				$nilai_angka		= $data_insert['nilai_angka'];
+				$nilai_indeks		= $data_insert['nilai_indeks'];
 				
 				// Hilangkan mhs dari array
 				unset($data_insert['id_pengambilan_mk']);
@@ -2187,7 +2228,7 @@ class Sync extends MY_Controller
 				if (isset($insert_result['result']['id_kls']) && isset($insert_result['result']['id_reg_pd']))
 				{
 					// Pesan Insert, tampilkan nama mahasiswa
-					$result['message'] = ($index_proses + 1) . " Insert {$mhs} Nilai: {$nilai_huruf} ({$nilai_angka}) : Berhasil";
+					$result['message'] = ($index_proses + 1) . " Insert {$mhs} Nilai = {$nilai_angka} ({$nilai_huruf} : $nilai_indeks) : Berhasil";
 					
 					// Update status sync
 					$this->rdb->Query("UPDATE pengambilan_mk SET fd_id_kls = '{$insert_result['result']['id_kls']}', fd_id_reg_pd = '{$insert_result['result']['id_reg_pd']}', fd_sync_on = sysdate WHERE id_pengambilan_mk = {$id_pengambilan_mk}");
@@ -2195,7 +2236,7 @@ class Sync extends MY_Controller
 				else // saat insert nilai gagal
 				{
 					// Pesan insert jika gagal
-					$result['message'] = ($index_proses + 1) . " Insert {$mhs} Nilai: {$nilai_huruf} ({$nilai_angka}) : Gagal. " . json_encode($insert_result['result']);
+					$result['message'] = ($index_proses + 1) . " Insert {$mhs} Nilai = {$nilai_angka} ({$nilai_huruf} : $nilai_indeks) : Gagal. " . json_encode($insert_result['result']);
 					$result['message'] .= "\n" . json_encode($data_insert);
 				}
 				
@@ -2223,6 +2264,7 @@ class Sync extends MY_Controller
 				$id_reg_pd			= $data_update['id_reg_pd'];
 				$nilai_huruf		= $data_update['nilai_huruf'];
 				$nilai_angka		= $data_update['nilai_angka'];
+				$nilai_indeks		= $data_update['nilai_indeks'];
 				
 				// Hilangkan data tdk diperlukan untuk update
 				unset($data_update['id_pengambilan_mk']);
@@ -2246,7 +2288,228 @@ class Sync extends MY_Controller
 				// Jika tidak ada masalah update
 				if ($update_result['result']['error_code'] == 0)
 				{
-					$result['message'] = ($index_proses + 1) . " Update {$mhs} Nilai: {$nilai_huruf} ({$nilai_angka}) : Berhasil";
+					$result['message'] = ($index_proses + 1) . " Update {$mhs} Nilai = {$nilai_angka} ({$nilai_huruf} : $nilai_indeks) : Berhasil";
+					
+					// Update status sync
+					$this->rdb->Query("UPDATE pengambilan_mk SET fd_sync_on = sysdate WHERE id_pengambilan_mk = {$id_pengambilan_mk}");
+				}
+				else
+				{
+					$result['message'] = ($index_proses + 1) . " Update {$mhs} Nilai: {$nilai_huruf} ({$nilai_angka}) : Gagal. ";
+					$result['message'] .= "({$update_result['result']['error_code']}) {$update_result['result']['error_desc']}";
+					$result['message'] .= "\n" . json_encode($data_update_json);
+				}
+				
+				// Status proses
+				$result['status'] = SYNC_STATUS_PROSES;
+				
+				// meneruskan index proses ditambah lagi dengan jumlah data insert
+				$index_proses += $jumlah_insert;
+				
+				// ganti parameter
+				$_POST['index_proses'] = $index_proses + 1;
+				$result['params'] = http_build_query($_POST);
+			}
+			// --------------------------------
+			// Selesai
+			// --------------------------------
+			else
+			{
+				$result['message'] = "Selesai";
+				$result['status'] = SYNC_STATUS_DONE;
+			}
+		}
+		
+		echo json_encode($result);
+	}
+	
+	private function proses_nilai_per_prodi()
+	{
+		$result = array('status'=> '', 'time' => '', 'message' => '', 'nextUrl' => site_url('sync/proses/'. $this->uri->segment(3)), 'params'	=> '');
+		
+		$mode	= isset($_POST['mode']) ? $_POST['mode'] : MODE_AMBIL_DATA_LANGITAN;
+		
+		// -----------------------------------
+		// Ambil data untuk Insert
+		// -----------------------------------
+		if ($mode == MODE_AMBIL_DATA_LANGITAN)
+		{
+			// Parameter
+			$kode_prodi = $this->input->post('kode_prodi');
+			$id_smt		= $this->input->post('semester');
+			
+			// Konversi format semester ke id_semester
+			$sql_semester_raw = file_get_contents(APPPATH.'models/sql/semester-konversi.sql');
+			$sql_semester = strtr($sql_semester_raw, array('@npsn' => $this->satuan_pendidikan['npsn'], '@id_smt' => $id_smt));
+			$semester_langitan = $this->rdb->QueryToArray($sql_semester);
+			$id_semester = $semester_langitan[0]['ID_SEMESTER'];
+			
+			// Ambil data nilai peserta kuliah yg akan insert
+			$sql_nilai_prodi_raw = file_get_contents(APPPATH.'models/sql/nilai-per-prodi-insert.sql');
+			$sql_nilai_prodi = strtr($sql_nilai_prodi_raw, array(
+				'@npsn' => $this->satuan_pendidikan['npsn'],
+				'@kode_prodi' => $kode_prodi,
+				'@smt' => $id_semester
+			));
+			$data_set = $this->rdb->QueryToArray($sql_nilai_prodi);
+			
+			$this->session->set_userdata('data_insert_set', $data_set);
+			
+			$result['message'] = 'Ambil data Sistem Langitan yang akan di proses Entri. Jumlah data: ' . count($data_set);
+			$result['status'] = SYNC_STATUS_PROSES;
+			//$result['message'] = 'Ambil data Sistem Langitan yang akan di proses Entri. Jumlah data: ' . print_r($data_set);
+			//$result['status'] = SYNC_STATUS_DONE;
+			
+			// ganti parameter
+			$_POST['mode'] = MODE_AMBIL_DATA_LANGITAN_2;
+			$result['params'] = http_build_query($_POST);
+		}
+		// -----------------------------------
+		// Ambil data untuk Update
+		// -----------------------------------
+		else if ($mode == MODE_AMBIL_DATA_LANGITAN_2)
+		{
+			// Parameter
+			$kode_prodi = $this->input->post('kode_prodi');
+			$id_smt		= $this->input->post('semester');
+			
+			// Konversi format semester ke id_semester
+			$sql_semester_raw = file_get_contents(APPPATH.'models/sql/semester-konversi.sql');
+			$sql_semester = strtr($sql_semester_raw, array('@npsn' => $this->satuan_pendidikan['npsn'], '@id_smt' => $id_smt));
+			$semester_langitan = $this->rdb->QueryToArray($sql_semester);
+			$id_semester = $semester_langitan[0]['ID_SEMESTER'];
+			
+			// Ambil peserta kuliah yg akan di update
+			$sql_nilai_raw = file_get_contents(APPPATH.'models/sql/nilai-per-prodi-update.sql');
+			$sql_nilai = strtr($sql_nilai_raw, array(
+				'@npsn' => $this->satuan_pendidikan['npsn'],
+				'@kode_prodi' => $kode_prodi,
+				'@smt' => $id_semester
+			));
+			$data_set = $this->rdb->QueryToArray($sql_nilai);
+			
+			$this->session->set_userdata('data_update_set', $data_set);
+			
+			$result['message'] = 'Ambil data Sistem Langitan yang akan di proses Update. Jumlah data: ' . count($data_set);
+			$result['status'] = SYNC_STATUS_PROSES;
+			
+			// ganti parameter
+			$_POST['mode'] = MODE_SYNC;
+			$result['params'] = http_build_query($_POST);
+		}
+		// -----------------------------------
+		// Proses Sinkronisasi dari data yg sudah diambil
+		// -----------------------------------
+		else if ($mode == MODE_SYNC)
+		{
+			$index_proses = isset($_POST['index_proses']) ? $_POST['index_proses'] : 0;
+			
+			// Ambil dari cache
+			$data_insert_set = $this->session->userdata('data_insert_set');
+			$jumlah_insert = count($data_insert_set);
+			
+			// Ambil dari cache
+			$data_update_set = $this->session->userdata('data_update_set');
+			$jumlah_update = count($data_update_set);
+			
+			// Waktu Sinkronisasi
+			$time_sync = date('Y-m-d H:i:s');
+			
+			// --------------------------------
+			// Proses Insert
+			// --------------------------------
+			if ($index_proses < $jumlah_insert)
+			{
+				// Proses dalam bentuk key lowercase
+				$data_insert = array_change_key_case($data_insert_set[$index_proses], CASE_LOWER);
+				
+				// Simpan mhs untuk tampilan sync
+				$id_pengambilan_mk	= $data_insert['id_pengambilan_mk'];
+				$mhs				= $data_insert['mhs'];
+				$nilai_huruf		= $data_insert['nilai_huruf'];
+				$nilai_angka		= $data_insert['nilai_angka'];
+				$nilai_indeks		= $data_insert['nilai_indeks'];
+				$nama_kelas			= $data_insert['nama_kelas'];
+				
+				// Hilangkan mhs dari array
+				unset($data_insert['id_pengambilan_mk']);
+				unset($data_insert['mhs']);
+				unset($data_insert['nama_kelas']);
+				
+				// Cleansing data
+				if ($data_insert['nilai_huruf'] == '') { unset($data_insert['nilai_huruf']); }
+				if ($data_insert['nilai_angka'] == '') { unset($data_insert['nilai_angka']); }
+				
+				// Entri ke Feeder nilai
+				$insert_result = $this->feeder->InsertRecord($this->token, FEEDER_NILAI, json_encode($data_insert));
+				
+				// Jika berhasil insert, terdapat return id_kls & id_reg_pd
+				if (isset($insert_result['result']['id_kls']) && isset($insert_result['result']['id_reg_pd']))
+				{
+					// Pesan Insert, tampilkan nama mahasiswa
+					$result['message'] = ($index_proses + 1) . " Insert {$nama_kelas} {$mhs} Nilai = {$nilai_angka} ({$nilai_huruf} : $nilai_indeks) : Berhasil";
+					
+					// Update status sync
+					$this->rdb->Query("UPDATE pengambilan_mk SET fd_id_kls = '{$insert_result['result']['id_kls']}', fd_id_reg_pd = '{$insert_result['result']['id_reg_pd']}', fd_sync_on = sysdate WHERE id_pengambilan_mk = {$id_pengambilan_mk}");
+				}
+				else // saat insert nilai gagal
+				{
+					// Pesan insert jika gagal
+					$result['message'] = ($index_proses + 1) . " Insert {$nama_kelas} {$mhs} Nilai = {$nilai_angka} ({$nilai_huruf} : $nilai_indeks) : Gagal. " . json_encode($insert_result['result']);
+					$result['message'] .= "\n" . json_encode($data_insert);
+				}
+				
+				$result['status'] = SYNC_STATUS_PROSES;
+				
+				// ganti parameter
+				$_POST['index_proses'] = $index_proses + 1;
+				$result['params'] = http_build_query($_POST);
+			}
+			// --------------------------------
+			// Proses Update
+			// --------------------------------
+			else if ($index_proses < ($jumlah_insert + $jumlah_update))
+			{
+				// index berjalan dikurangi jumlah data insert utk mendapatkan index update
+				$index_proses -= $jumlah_insert;
+				
+				// Proses dalam bentuk key lowercase
+				$data_update = array_change_key_case($data_update_set[$index_proses], CASE_LOWER);
+				
+				// Simpan informasi mahasiswa
+				$id_pengambilan_mk	= $data_update['id_pengambilan_mk'];
+				$mhs				= $data_update['mhs'];
+				$id_kls				= $data_update['id_kls'];
+				$id_reg_pd			= $data_update['id_reg_pd'];
+				$nilai_huruf		= $data_update['nilai_huruf'];
+				$nilai_angka		= $data_update['nilai_angka'];
+				$nilai_indeks		= $data_update['nilai_indeks'];
+				$nama_kelas			= $data_update['nama_kelas'];
+				
+				// Hilangkan data tdk diperlukan untuk update
+				unset($data_update['id_pengambilan_mk']);
+				unset($data_update['mhs']);
+				unset($data_update['id_kls']);
+				unset($data_update['id_reg_pd']);
+				unset($data_update['nama_kelas']);
+				
+				// Cleansing data
+				if ($data_update['nilai_huruf'] == '') { unset($data_update['nilai_huruf']); }
+				if ($data_update['nilai_angka'] == '') { unset($data_update['nilai_angka']); }
+				
+				// Build data format
+				$data_update_json = array(
+					'key'	=> array('id_kls' => $id_kls, 'id_reg_pd' => $id_reg_pd),
+					'data'	=> $data_update
+				);
+				
+				// Update ke Feeder nilai
+				$update_result = $this->feeder->UpdateRecord($this->token, FEEDER_NILAI, json_encode($data_update_json));
+				
+				// Jika tidak ada masalah update
+				if ($update_result['result']['error_code'] == 0)
+				{
+					$result['message'] = ($index_proses + 1) . " Update {$nama_kelas} {$mhs} Nilai = {$nilai_angka} ({$nilai_huruf} : $nilai_indeks) : Berhasil";
 					
 					// Update status sync
 					$this->rdb->Query("UPDATE pengambilan_mk SET fd_sync_on = sysdate WHERE id_pengambilan_mk = {$id_pengambilan_mk}");
@@ -2294,7 +2557,7 @@ class Sync extends MY_Controller
 		$semester_langitan = $this->rdb->QueryToArray($sql_semester);
 		$id_semester = $semester_langitan[0]['ID_SEMESTER'];
 		
-		// Ambil data kelas yang ada di langitan yg sudah ter-sync (sudah ada id_kls di feeder_kelas_kuliah)
+		// Ambil data kelas yang ada di langitan yg sudah ter-sync (sudah ada fd_id_kls di kelas_mk)
 		$sql_ambil_kelas_raw = file_get_contents(APPPATH.'models/sql/ambil-kelas-kuliah.sql');
 		$sql_ambil_kelas = strtr($sql_ambil_kelas_raw, array('@npsn' => $this->satuan_pendidikan['npsn'], '@kode_prodi' => $kode_prodi, '@smt' => $id_semester));
 		$data_set = $this->rdb->QueryToArray($sql_ambil_kelas);
@@ -2457,6 +2720,8 @@ class Sync extends MY_Controller
 			
 				// Cleansing data
 				if ($kuliah_mahasiswa_insert['sks_smt'] > 30) $kuliah_mahasiswa_insert['sks_smt'] = 30;
+				
+				// print_r($kuliah_mahasiswa_insert); exit();
 				
 				// Entri ke Feeder Kuliah Mahasiswa
 				$insert_result = $this->feeder->InsertRecord($this->token, FEEDER_KULIAH_MAHASISWA, json_encode($kuliah_mahasiswa_insert));
@@ -2677,12 +2942,13 @@ class Sync extends MY_Controller
 			
 			// Ambil informasi data kelas
 			$kelas_set = $this->rdb->QueryToArray(
-				"SELECT kls.id_kelas_mk, mk.kd_mata_kuliah||' '||mk.nm_mata_kuliah||' ('||nk.nama_kelas||') ' as nm_kelas, nm_program_studi
+				"SELECT kls.id_kelas_mk, mk.kd_mata_kuliah||' '||mk.nm_mata_kuliah||' ('||nk.nama_kelas||') ' as nm_kelas, nm_jenjang, nm_program_studi
 				FROM kelas_mk kls
 				JOIN kurikulum_mk kmk ON kmk.id_kurikulum_mk = kls.id_kurikulum_mk
 				JOIN mata_kuliah mk ON mk.id_mata_kuliah = kmk.id_mata_kuliah
 				JOIN nama_kelas nk ON nk.id_nama_kelas = kls.no_kelas_mk
 				JOIN program_studi ps on ps.id_program_studi= kls.id_program_studi
+				JOIN jenjang j on j.id_jenjang = ps.id_jenjang
 				WHERE kls.id_kelas_mk = {$id_kelas_mk}");
 				
 			// Konversi format semester ke id_semester
@@ -2693,7 +2959,31 @@ class Sync extends MY_Controller
 					pt.npsn = '{$this->satuan_pendidikan['npsn']}' AND 
 					s.thn_akademik_semester||decode(upper(nm_semester), 'GANJIL','1','GENAP','2') = '{$id_smt}'");
 			
-			$this->smarty->assign('jenis_sinkronisasi', 'Nilai Perkuliahan '.$kelas_set[0]['NM_PROGRAM_STUDI'].' - '.$kelas_set[0]['NM_KELAS'].' - '.$semester_langitan[0]['THN'].'/'. ($semester_langitan[0]['THN'] + 1).' '.$semester_langitan[0]['NM_SEMESTER'].'');
+			$this->smarty->assign('jenis_sinkronisasi', "Nilai Perkuliahan {$kelas_set[0]['NM_JENJANG']} {$kelas_set[0]['NM_PROGRAM_STUDI']} - {$kelas_set[0]['NM_KELAS']} {$semester_langitan[0]['THN']}/" . ($semester_langitan[0]['THN'] + 1)." {$semester_langitan[0]['NM_SEMESTER']}");
+			$this->smarty->assign('url', site_url('sync/proses/'.$mode));
+		}
+		
+		if ($mode == 'nilai_per_prodi')
+		{
+			$kode_prodi		= $this->input->post('kode_prodi');
+			$id_smt			= $this->input->post('semester');
+			
+			$program_studi_set = $this->rdb->QueryToArray(
+				"SELECT nm_jenjang, nm_program_studi FROM program_studi ps
+				JOIN fakultas f ON f.id_fakultas = ps.id_fakultas
+				JOIN jenjang j ON j.id_jenjang = ps.id_jenjang
+				JOIN perguruan_tinggi pt ON pt.id_perguruan_tinggi = f.id_perguruan_tinggi
+				WHERE pt.npsn = '{$this->satuan_pendidikan['npsn']}' AND ps.kode_program_studi = '{$kode_prodi}'");
+			
+			// Konversi format semester ke id_semester
+			$semester_langitan = $this->rdb->QueryToArray(
+				"SELECT thn_akademik_semester as thn, nm_semester FROM semester s
+				JOIN perguruan_tinggi pt ON pt.id_perguruan_tinggi = s.id_perguruan_tinggi
+				WHERE 
+					pt.npsn = '{$this->satuan_pendidikan['npsn']}' AND 
+					s.thn_akademik_semester||decode(upper(nm_semester), 'GANJIL','1','GENAP','2') = '{$id_smt}'");
+					
+			$this->smarty->assign('jenis_sinkronisasi', 'Nilai Perkuliahan '.$program_studi_set[0]['NM_JENJANG'].' '.$program_studi_set[0]['NM_PROGRAM_STUDI'].' - '.$semester_langitan[0]['THN'].'/'. ($semester_langitan[0]['THN'] + 1).' '.$semester_langitan[0]['NM_SEMESTER']);
 			$this->smarty->assign('url', site_url('sync/proses/'.$mode));
 		}
 		
@@ -2713,6 +3003,7 @@ class Sync extends MY_Controller
 			$this->smarty->assign('url', site_url('sync/proses/'.$mode));
 		}
 		
+		$this->smarty->assign('mode', $mode);
 		$this->smarty->display('sync/start.tpl');
 	}
 	
@@ -2757,6 +3048,11 @@ class Sync extends MY_Controller
 		else if ($mode == 'nilai')
 		{
 			$this->proses_nilai();
+		}
+		
+		else if ($mode == 'nilai_per_prodi')
+		{
+			$this->proses_nilai_per_prodi();
 		}
 		
 		else if ($mode == 'kuliah_mahasiswa')

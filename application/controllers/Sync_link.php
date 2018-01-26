@@ -16,7 +16,7 @@ class Sync_link extends MY_Controller
 
 		// Inisialisasi Token dan Satuan Pendidikan
 		$this->token = $this->session->userdata('token');
-		$this->satuan_pendidikan = xcache_get(FEEDER_SATUAN_PENDIDIKAN);
+		$this->satuan_pendidikan = $this->session->userdata(FEEDER_SATUAN_PENDIDIKAN);
 		
 		// Inisialisasi URL Feeder
 		$this->load->library('feeder', array('url' => $this->session->userdata('wsdl')));
@@ -24,6 +24,99 @@ class Sync_link extends MY_Controller
 		// Inisialisasi Library RemoteDB
 		$this->load->library('remotedb', NULL, 'rdb');
 		$this->rdb->set_url($this->session->userdata('langitan'));
+	}
+	
+	function dosen()
+	{		
+		$jumlah = array();
+		
+		// Ambil jumlah dosen di feeder
+		$response = $this->feeder->GetCountRecordset($this->token, FEEDER_DOSEN, null);
+		$jumlah['feeder'] = $response['result'];
+		
+		// Ambil jumlah dosen di langitan
+		$data_set = $this->rdb->QueryToArray(
+			"SELECT count(*) as jumlah FROM pengguna p
+			JOIN perguruan_tinggi pt ON pt.id_perguruan_tinggi = p.id_perguruan_tinggi
+			WHERE join_table = 2 AND pt.npsn = '{$this->satuan_pendidikan['npsn']}'
+			UNION ALL
+			SELECT count(*) as jumlah FROM pengguna p
+			JOIN perguruan_tinggi pt ON pt.id_perguruan_tinggi = p.id_perguruan_tinggi
+			WHERE join_table = 2 AND pt.npsn = '{$this->satuan_pendidikan['npsn']}' AND p.fd_id_sdm IS NOT NULL");
+		$jumlah['langitan'] = $data_set[0]['JUMLAH'];
+		$jumlah['linked'] = $data_set[1]['JUMLAH'];
+		$jumlah['insert'] = $jumlah['feeder'] - $jumlah['linked'];
+		
+		$this->smarty->assign('jumlah', $jumlah);
+		
+		$this->smarty->assign('url_sync', site_url('sync_link/start/'.$this->uri->segment(2)));
+		$this->smarty->display('sync_link/'.$this->uri->segment(2).'.tpl');
+	}
+	
+	function proses_dosen()
+	{
+		$result = array('status'=> '', 'time' => '', 'message' => '', 'nextUrl' => site_url('sync_link/proses/'. $this->uri->segment(3)), 'params'	=> '');
+		
+		$mode	= isset($_POST['mode']) ? $_POST['mode'] : MODE_AMBIL_DATA_FEEDER;
+		
+		if ($mode == MODE_AMBIL_DATA_FEEDER)
+		{
+			$response = $this->feeder->GetCountRecordset($this->token, FEEDER_DOSEN);
+			
+			// simpan ke cache
+			$this->session->set_userdata('jumlah_'.FEEDER_DOSEN, $response['result']);
+			
+			$result['message'] = 'Jumlah data Dosen di Feeder yg akan diproses : ' . $response['result'];
+			$result['status'] = SYNC_STATUS_PROSES;
+			
+			// ganti parameter
+			$_POST['mode'] = MODE_SYNC;
+			$result['params'] = http_build_query($_POST);
+		}
+		else if ($mode == MODE_SYNC)
+		{
+			$index_proses = isset($_POST['index_proses']) ? $_POST['index_proses'] : 0;
+			
+			// ambil dari cache
+			$total_data = $this->session->userdata('jumlah_'.FEEDER_DOSEN);
+			
+			// Jika masih belum di proses semua
+			if ($index_proses < $total_data)
+			{
+				// Ambil per row di feeder
+				$response = $this->feeder->GetRecordset($this->token, FEEDER_DOSEN, null, '1', '1', $index_proses);
+				$data = $response['result'][0];
+
+				// Cek di langitan berdasarkan id_reg_pd
+				$response = $this->rdb->QueryToArray("SELECT COUNT(*) AS jumlah FROM pengguna WHERE fd_id_sdm = '{$data['id_sdm']}'");
+				
+				// number
+				$n = $index_proses + 1;
+				
+				// Jika ada
+				if ($response[0]['JUMLAH'] > 0)
+				{
+					$result['message'] = "{$n}. {$data['nidn']} {$data['nm_sdm']} ==> Ada";
+				}
+				else
+				{
+					$result['message'] = "{$n}. {$data['nidn']} {$data['nm_sdm']} ==> Tidak ada";
+				}
+				
+				$result['status'] = SYNC_STATUS_PROSES;
+				
+				// ganti parameter
+				$_POST['index_proses'] = $index_proses + 1;
+				$result['params'] = http_build_query($_POST);
+			}
+			else
+			{
+				$result['status'] = SYNC_STATUS_DONE;
+				$result['message'] = 'Selesai';
+			}
+		}
+		
+		echo json_encode($result);
 	}
 	
 	/**
@@ -77,7 +170,7 @@ class Sync_link extends MY_Controller
 				ORDER BY 1 ASC");
 				
 			// simpan ke cache
-			xcache_set('mahasiswa_set', $mahasiswa_set);
+			$this->session->set_userdata('mahasiswa_set', $mahasiswa_set);
 			
 			$result['message'] = 'Ambil data langitan selesai. Jumlah data: ' . count($mahasiswa_set);
 			$result['status'] = SYNC_STATUS_PROSES;
@@ -91,7 +184,7 @@ class Sync_link extends MY_Controller
 			$index_proses = isset($_POST['index_proses']) ? $_POST['index_proses'] : 0;
 			
 			// Ambil dari cache
-			$mahasiswa_set = xcache_get('mahasiswa_set');
+			$mahasiswa_set = $this->session->userdata('mahasiswa_set');
 			
 			// Jika masih dalam rentang index, di proses
 			if ($index_proses < count($mahasiswa_set))
@@ -194,7 +287,7 @@ class Sync_link extends MY_Controller
 				ORDER BY 2 ASC");
 				
 			// simpan ke cache
-			xcache_set('mahasiswa_set', $mahasiswa_set);
+			$this->session->set_userdata('mahasiswa_set', $mahasiswa_set);
 			
 			$result['message'] = 'Ambil data langitan selesai. Jumlah data: ' . count($mahasiswa_set);
 			$result['status'] = SYNC_STATUS_PROSES;
@@ -208,7 +301,7 @@ class Sync_link extends MY_Controller
 			$index_proses = isset($_POST['index_proses']) ? $_POST['index_proses'] : 0;
 			
 			// Ambil dari cache
-			$mahasiswa_set = xcache_get('mahasiswa_set');
+			$mahasiswa_set = $this->session->userdata('mahasiswa_set');
 			
 			// Jika masih dalam rentang index, di proses
 			if ($index_proses < count($mahasiswa_set))
@@ -252,6 +345,7 @@ class Sync_link extends MY_Controller
 	}
 	
 	
+	
 	/**
 	 * GET /sync_link/program_studi/
 	 */
@@ -280,12 +374,12 @@ class Sync_link extends MY_Controller
 			"SELECT count(*) as jumlah FROM program_studi ps
 			JOIN fakultas f ON f.id_fakultas = ps.id_fakultas
 			JOIN perguruan_tinggi pt on pt.id_perguruan_tinggi = f.id_perguruan_tinggi
-			JOIN feeder_sms feed ON feed.id_program_studi = ps.id_program_studi
-			WHERE npsn = '{$this->satuan_pendidikan['npsn']}'");
+			WHERE npsn = '{$this->satuan_pendidikan['npsn']}' AND fd_id_sms IS NOT NULL");
 		$jumlah['linked'] = $result[0]['JUMLAH'];
 		
 		$this->smarty->assign('jumlah', $jumlah);
 		
+		$this->smarty->assign('url_sync', site_url('sync_link/start/'.$this->uri->segment(2)));
 		$this->smarty->display('sync_link/program_studi.tpl');
 	}
 	
@@ -392,7 +486,7 @@ class Sync_link extends MY_Controller
 			$response = $this->feeder->GetCountRecordset($this->token, FEEDER_MAHASISWA_PT, "ket_keluar = 'Lulus'");
 			
 			// simpan ke cache
-			xcache_set('jumlah_'.FEEDER_MAHASISWA_PT, $response['result']);
+			$this->session->set_userdata('jumlah_'.FEEDER_MAHASISWA_PT, $response['result']);
 			
 			$result['message'] = 'Ambil data feeder selesai. Jumlah data yg akan diproses : ' . $response['result'];
 			$result['status'] = SYNC_STATUS_PROSES;
@@ -406,7 +500,7 @@ class Sync_link extends MY_Controller
 			$index_proses = isset($_POST['index_proses']) ? $_POST['index_proses'] : 0;
 			
 			// ambil dari cache
-			$total_data = xcache_get('jumlah_'.FEEDER_MAHASISWA_PT);
+			$total_data = $this->session->userdata('jumlah_'.FEEDER_MAHASISWA_PT);
 			
 			if ($index_proses < $total_data)
 			{
@@ -529,7 +623,7 @@ class Sync_link extends MY_Controller
 			$response = $this->feeder->GetCountRecordset($this->token, FEEDER_MAHASISWA_PT);
 			
 			// simpan ke cache
-			xcache_set('jumlah_'.FEEDER_MAHASISWA_PT, $response['result']);
+			$this->session->set_userdata('jumlah_'.FEEDER_MAHASISWA_PT, $response['result']);
 			
 			$result['message'] = 'Ambil data feeder selesai. Jumlah data yg akan diproses : ' . $response['result'];
 			$result['status'] = SYNC_STATUS_PROSES;
@@ -543,7 +637,7 @@ class Sync_link extends MY_Controller
 			$index_proses = isset($_POST['index_proses']) ? $_POST['index_proses'] : 0;
 			
 			// ambil dari cache
-			$total_data = xcache_get('jumlah_'.FEEDER_MAHASISWA_PT);
+			$total_data = $this->session->userdata('jumlah_'.FEEDER_MAHASISWA_PT);
 			
 			if ($index_proses < $total_data)
 			{
@@ -584,27 +678,33 @@ class Sync_link extends MY_Controller
 	
 	function start($mode)
 	{
+		if ($mode == 'dosen')
+		{
+			$this->smarty->assign('jenis_sinkronisasi', 'Import Dosen');
+			$this->smarty->assign('url', site_url('sync_link/proses/'.$mode));
+		}
+		
 		if ($mode == 'mahasiswa')
 		{
-			$this->smarty->assign('jenis_sinkronisasi', 'Link Mahasiswa');
+			$this->smarty->assign('jenis_sinkronisasi', 'Import Mahasiswa');
 			$this->smarty->assign('url', site_url('sync_link/proses/'.$mode));
 		}
 		
 		if ($mode == 'mahasiswa_pt')
 		{
-			$this->smarty->assign('jenis_sinkronisasi', 'Link Mahasiswa PT');
+			$this->smarty->assign('jenis_sinkronisasi', 'Import Mahasiswa PT');
 			$this->smarty->assign('url', site_url('sync_link/proses/'.$mode));
 		}
 		
 		if ($mode == 'kuliah_mahasiswa')
 		{
-			$this->smarty->assign('jenis_sinkronisasi', 'Link Kuliah Mahasiswa');
+			$this->smarty->assign('jenis_sinkronisasi', 'Import Kuliah Mahasiswa');
 			$this->smarty->assign('url', site_url('sync_link/proses/'.$mode));
 		}
 		
 		if ($mode == 'program_studi')
 		{
-			$this->smarty->assign('jenis_sinkronisasi', 'Link Program Studi');
+			$this->smarty->assign('jenis_sinkronisasi', 'Import Program Studi');
 			$this->smarty->assign('url', site_url('sync_link/proses/'.$mode));
 		}
 		
@@ -630,7 +730,12 @@ class Sync_link extends MY_Controller
 		// harus request POST 
 		if ($_SERVER['REQUEST_METHOD'] != 'POST') { return; }
 		
-		if ($mode == 'mahasiswa')
+		if ($mode == 'dosen')
+		{
+			$this->proses_dosen();
+		}
+		
+		else if ($mode == 'mahasiswa')
 		{
 			$this->proses_mahasiswa();
 		}

@@ -11,7 +11,7 @@
 					<tr>
 						<th>Nama Tabel</th>
 						<th>Jenis</th>
-						<th width=50%>Keterangan</th>
+						<th style="width: 40%">Keterangan</th>
 						<th></th>
 					</tr>
 				</thead>
@@ -24,6 +24,7 @@
 							<td class="text-right">
 								<a class="btn btn-success btn-xs" href="{site_url('webservice/table_column')}/{$data.table}" role="button">Column</a>
 								<a class="btn btn-default btn-xs" href="{site_url('webservice/table_data')}/{$data.table}" role="button">View Data</a>
+								<a class="btn btn-default btn-xs" href="{site_url('webservice/table_data')}/{$data.table}/raw" role="button">View Data RAW</a>
 								<a class="btn btn-default btn-xs" href="{site_url('webservice/table_data_csv')}/{$data.table}" role="button" target="_blank">Download CSV</a>
 							</td>
 						</tr>

@@ -7,11 +7,8 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta name="msapplication-config" content="none"/>
 		
-		<!-- Source Sans Pro Font -->
-		<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro' rel='stylesheet' type='text/css'>
-		
 		<!-- Bootstrap -->
-		<link href="{base_url('assets/css/bootstrap.min.css')}" rel="stylesheet">
+		<link href="{base_url('assets/bootstrap/css/bootstrap.min.css')}" rel="stylesheet">
 		
 		<style type="text/css">
 			body { padding-top: 40px; }
@@ -67,13 +64,18 @@
 							</ul>
 						</li>
 						<li>
-							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Mahasiswa <i class="caret"></i></a>
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Link/Import Data <i class="caret"></i></a>
+							<ul class="dropdown-menu">
+								<li><a href="{site_url('sync_link/program_studi')}">Program Studi</a></li>
+								<li><a href="{site_url('sync_link/dosen')}">Dosen</a></li>
+								<li><a href="{site_url('sync_link/mahasiswa')}">Mahasiswa</a></li>
+								<li><a href="{site_url('sync_link/mahasiswa_pt')}">Mahasiswa PT</a></li>
+							</ul>
+						</li>
+						<li>
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Synchronize Data <i class="caret"></i></a>
 							<ul class="dropdown-menu">
 								<li><a href="{site_url('sync/mahasiswa')}">Sync Mahasiswa</a></li>
-								<li role="separator" class="divider"></li>
-								<li><a href="{site_url('sync_link/program_studi')}"><span class="text-info">Link Program Studi</span></a></li>
-								<li><a href="{site_url('sync_link/mahasiswa')}"><span class="text-info">Link Mahasiswa</span></a></li>
-								<li><a href="{site_url('sync_link/mahasiswa_pt')}"><span class="text-info">Link Mahasiswa PT</span></a></li>
 								<li role="separator" class="divider"></li>
 								<li><a href="{site_url('sync_del/mk_kurikulum')}"><span class="text-danger">Hapus MK Kurikulum</span></a></li>
 								<li role="separator" class="divider"></li>
@@ -96,11 +98,18 @@
 								<li role="separator" class="divider"></li>
 								<li><a href="{site_url('sync/kelas_kuliah')}">Sync Kelas Perkuliahan</a></li>
 								<li><a href="{site_url('sync/nilai')}">Sync Nilai Perkuliahan</a></li>
+								<li><a href="{site_url('sync/nilai_per_prodi')}">Sync Nilai Perkuliahan (Per Prodi)</a></li>
 								<li><a href="{site_url('sync/ajar_dosen')}">Sync Dosen Pengajar Kelas</a></li>
 								
 								<li role="separator" class="divider"></li>
 								<li><a href="{site_url('sync/kuliah_mahasiswa')}">Sync Aktivitas Mahasiswa</a></li>
 								<li><a href="{site_url('sync_link/kuliah_mahasiswa')}"><span class="text-info">Link Aktivitas Mahasiswa</span></a></li>
+							</ul>
+						</li>
+						<li>
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Hapus Data Manual<i class="caret"></i></a>
+							<ul class="dropdown-menu">
+								<li><a href="{site_url('delete-data/kuliah-mahasiswa')}">Aktivitas Mahasiswa</a></li>
 							</ul>
 						</li>
 					</ul>
@@ -121,9 +130,9 @@
 		{if isset($debug)}<pre>{$debug}</pre>{/if}
 
 		<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-		<script src="{base_url('assets/js/jquery-1.12.3.min.js')}"></script>
+		<script src="{base_url('assets/jquery/jquery-1.12.4.min.js')}"></script>
 		<!-- Include all compiled plugins (below), or include individual files as needed -->
-		<script src="{base_url('assets/js/bootstrap.min.js')}"></script>
+		<script src="{base_url('assets/bootstrap/js/bootstrap.min.js')}"></script>
 		{block name='footer-script'}{/block}
 	</body>
 </html>

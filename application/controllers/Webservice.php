@@ -1,7 +1,10 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
-class Webservice extends MY_Controller {
-	
+/**
+ * @property string $token Token
+ */
+class Webservice extends MY_Controller 
+{
 	function __construct()
 	{
 		parent::__construct();
@@ -42,7 +45,7 @@ class Webservice extends MY_Controller {
 		$this->smarty->display('webservice/table_column.tpl');
 	}
 
-	function table_data($table)
+	function table_data($table, $raw = '')
 	{
 		// Inisialisasi parameter
 		$filter	= null;
@@ -60,18 +63,45 @@ class Webservice extends MY_Controller {
 		}
 		
 		// Jika tabel sms (program studi)
-		if ($table == 'sms')
+		if ($table == FEEDER_SMS)
 		{			
 			// Modify parameter
 			$filter = "p.id_sp = '{$this->satuan_pendidikan['id_sp']}'";
 		}
+		
+		// jika tabel semester
+		if ($table == FEEDER_SEMESTER)
+		{
+			$order = 'id_smt desc';
+		}
+		
+		// jika ada query filter
+		if (isset($_GET['filter']))
+		{
+			$filter = ($filter == null) ? $_GET['filter'] : $filter . ' and ' . $_GET['filter'];
+		}
+		
+		// Jika raw
+		if ($raw == 'raw')
+		{
+			$table = "{$table}.raw";
+		}
 
 		// Ambil data --> params: token, tabel, filter, order, limit, offset
 		$result = $this->feeder->GetRecordset($this->token, $table, $filter, $order, $limit, $offset);
+		
+		foreach ($result['result'] as &$data)
+		{
+			if ($table == FEEDER_KELAS_KULIAH)
+			{
+				$data['pkey'] = json_encode(array('id_kls' => $data['id_kls']));
+			}
+		}
 
 		
 		$this->smarty->assign('column_set', $column['result']);
 		$this->smarty->assign('data_set', $result['result']);
+		$this->smarty->assign('table_name', $table);
 
 		$this->smarty->display('webservice/table_data.tpl');
 	}
@@ -85,28 +115,13 @@ class Webservice extends MY_Controller {
 		ini_set('memory_limit', '-1');
 		
 		// Nama File
-		$file_name = "{$this->satuan_pendidikan['npsn']}_{$table}_" . date('d-m-Y');
+		$file_name = "{$this->satuan_pendidikan['npsn']}_{$table}_" . date('Y-m-d');
 		
 		// header
 		header('Content-type: application/octet-stream');
 		header('Content-Disposition: attachment; filename="' . $file_name . '.csv"');
 		
-		
-		// Ambil kolom
-		$result = $this->feeder->GetDictionary($this->token, $table);
-		// $this->smarty->assignByRef('column_set', $result['result']);
-		$column_set = $result['result'];
-		
-		// {foreach $column_set as $column}"{$column.column_name}"{if not $column@last},{/if}{/foreach}
-		
-		// Print Nama Kolom, menambahkan petik ganda pada nama kolom
-		$column_names = array_keys($column_set);
-		foreach ($column_names as &$column_name)
-			$column_name = "\"{$column_name}\"";
-		
-		echo implode(",", $column_names) . "\r\n";
-		
-		flush();
+		$handle = fopen("php://output", 'w');
 		
 		// Parameter pengambilan record
 		$order	= null;
@@ -133,39 +148,81 @@ class Webservice extends MY_Controller {
 		
 		$data_set = array();
 		
-		if ($table != FEEDER_SEMESTER)
-		{
-			$table_raw = $table.'.raw';
-		}
-		else
-		{
-			$table_raw = $table;
-		}
+		$i_row = 0;
 		
 		for ($page = 0; $page <= $max_page; $page++)
 		{
 			$offset = $page * $limit;
-			$result = $this->feeder->GetRecordset($this->token, $table_raw, $filter, $order, $limit, $offset);
-			// $data_set = array_merge($data_set, $result['result']);
+			$result = $this->feeder->GetRecordset($this->token, $table, $filter, $order, $limit, $offset);
 			$row_set = $result['result'];
-			
-			// foreach $data_set as $data
-			// {foreach $column_set as $column}"{preg_replace('/\s+/', ' ', str_replace('"', '""', $data[$column.column_name]))}"{if not $column@last},{/if}{/foreach}
-			// endforeach
 			
 			foreach ($row_set as $row)
 			{
-				$row_values = array_values($row);
-				
-				foreach ($row_values as &$row_value)
+				// Row pertama untuk cetak nama kolom
+				if ($i_row == 0)
 				{
-					$row_value = preg_replace('/\s+/', ' ', str_replace('"', '""', $row_value));
+					$column_names = array_keys($row);
+					fputcsv($handle, $column_names);
 				}
 				
-				echo implode(',', $row_values) . "\r\n";		
+				$row_values = array_values($row);
+				fputcsv($handle, $row_values);
+				
+				$i_row++;
 			}
-			
-			flush();
 		}
+		
+		fclose($handle);
+	}
+	
+	/**
+	 * Menghapus data yang ada dalam feeder
+	 * @param string $table Nama tabel
+	 * @param json $data Disesuakan dengan primary key untuk hapus
+	 */
+	function remove_data()
+	{
+		if ($this->input->method() == 'post')
+		{
+			$table = $this->input->post('table');
+			$pkey = $this->input->post('pkey');
+		}
+	}
+	
+	function list_penugasan_dosen()
+	{
+		// Disable execution limit
+		set_time_limit(0);
+		
+		// Disable memory_limit
+		ini_set('memory_limit', '-1');
+		
+		// Nama File
+		$file_name = "penugasan_dosen_" . date('Y-m-d');
+		
+		// header
+		header('Content-type: application/octet-stream');
+		header('Content-Disposition: attachment; filename="' . $file_name . '.csv"');
+		
+		// File output handle
+		$handle = fopen("php://output", 'w');
+		
+		$result = $this->feeder->GetListPenugasanDosen($this->token, null, null, 500);
+		
+		// get columns from first row
+		$columns = array_keys($result['result'][0]);
+		
+		// Write column
+		fputcsv($handle, $columns);
+		
+		foreach ($result['result'] as $row)
+		{
+			$row_values = array_values($row);
+
+			// Write row values
+			fputcsv($handle, $row_values);
+		}
+		
+		fclose($handle);
 	}
 }
