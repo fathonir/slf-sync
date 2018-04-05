@@ -176,9 +176,10 @@ switch (ENVIRONMENT)
  *
  * Un-comment the $assign_to_config array below to use this feature
  */
-	// $assign_to_config['name_of_config_item'] = 'value of config item';
-	$assign_to_config['base_url'] = 'http://'.$_SERVER['SERVER_NAME'].'/slf-sync/';
-
+	if (php_sapi_name() !== 'cli')
+	{
+		$assign_to_config['base_url'] = 'http://' . $_SERVER['HTTP_HOST'];
+	}
 
 
 // --------------------------------------------------------------------
