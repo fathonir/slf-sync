@@ -1,6 +1,6 @@
 {
-	"description": "The CodeIgniter framework",
-	"name": "codeigniter/framework",
+	"description": "SLF Sync",
+	"name": "umaha-acid/slf-sync",
 	"type": "project",
 	"homepage": "https://codeigniter.com",
 	"license": "MIT",
