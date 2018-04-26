@@ -2817,6 +2817,214 @@ class Sync extends MY_Controller
 	}
 	
 	/**
+	 * Mahasiswa Lulus / DO / Keluar
+	 */
+	public function lulusan_do()
+	{
+		$jumlah = array();
+		
+		// Jumlah lulusan tidak bisa di dapat di feeder
+		$response = $this->feeder->GetCountRecordset($this->token, FEEDER_MAHASISWA_PT, "p.id_jns_keluar is not null");
+		$jumlah['feeder'] = $response['result'];
+
+		// Ambil data mahasiswa lulus
+		$sql_lulusan_raw = file_get_contents(APPPATH.'models/sql/lulusan-do.sql');
+		$sql_lulusan = strtr($sql_lulusan_raw, array('@npsn' => $this->satuan_pendidikan['npsn']));
+		$mhs_set = $this->rdb->QueryToArray($sql_lulusan);
+		
+		$jumlah['langitan'] = $mhs_set[0]['JUMLAH'];
+		$jumlah['linked'] = $mhs_set[1]['JUMLAH'];
+		$jumlah['update'] = $mhs_set[2]['JUMLAH'];
+		$jumlah['insert'] = $mhs_set[3]['JUMLAH'];
+		
+		$this->smarty->assign('jumlah', $jumlah);
+		
+		$this->smarty->assign('url_sync', site_url('sync/start/'.$this->uri->segment(2)));
+		$this->smarty->display('sync/'.$this->uri->segment(2).'.tpl');
+	}
+	
+	private function proses_lulusan_do()
+	{
+		$result = array('status'=> '', 'time' => '', 'message' => '', 'nextUrl' => site_url('sync/proses/'. $this->uri->segment(3)), 'params'	=> '');
+		
+		$mode	= isset($_POST['mode']) ? $_POST['mode'] : MODE_AMBIL_DATA_LANGITAN;
+		
+		// -----------------------------------
+		// Ambil data untuk Insert
+		// -----------------------------------
+		if ($mode == MODE_AMBIL_DATA_LANGITAN)
+		{
+			$sql_lulusan_do_insert = file_get_contents(APPPATH.'models/sql/lulusan-do-insert.sql');
+			
+			$lulusan_do_set = $this->rdb->QueryToArray($sql_lulusan_do_insert);
+			
+			$this->session->set_userdata('lulusan_do_insert_set', $lulusan_do_set);
+			
+			$result['message'] = 'Ambil data Sistem Langitan yang akan di proses Entri. Jumlah data: ' . count($lulusan_do_set);
+			$result['status'] = SYNC_STATUS_PROSES;
+			
+			// ganti parameter
+			$_POST['mode'] = MODE_AMBIL_DATA_LANGITAN_2;
+			$result['params'] = http_build_query($_POST);
+		}
+		// -----------------------------------
+		// Ambil data untuk Update
+		// -----------------------------------
+		else if ($mode == MODE_AMBIL_DATA_LANGITAN_2)
+		{
+			$sql_lulusan_do_update = file_get_contents(APPPATH.'models/sql/lulusan-do-update.sql');
+			
+			$lulusan_do_set = $this->rdb->QueryToArray($sql_lulusan_do_update);
+			
+			// simpan ke cache
+			$this->session->set_userdata('lulusan_do_update_set', $lulusan_do_set);
+			
+			$result['message'] = 'Ambil data Sistem Langitan yang akan di proses Update. Jumlah data: ' . count($lulusan_do_set);
+			$result['status'] = SYNC_STATUS_PROSES;
+			
+			// ganti parameter
+			$_POST['mode'] = MODE_SYNC;
+			$result['params'] = http_build_query($_POST);
+		}
+		// ----------------------------------------------
+		// Proses Sinkronisasi dari data yg sudah diambil
+		// ----------------------------------------------
+		else if ($mode == MODE_SYNC)
+		{
+			$index_proses = isset($_POST['index_proses']) ? $_POST['index_proses'] : 0;
+			
+			// Ambil dari cache
+			$lulusan_do_insert_set = $this->session->userdata('lulusan_do_insert_set');
+			$jumlah_insert = count($lulusan_do_insert_set);
+			
+			// Ambil dari cache
+			$lulusan_do_update_set = $this->session->userdata('lulusan_do_update_set');
+			$jumlah_update = count($lulusan_do_update_set);
+			
+			// Waktu Sinkronisasi
+			$time_sync = date('Y-m-d H:i:s');
+			
+			// --------------------------------
+			// Proses Insert. Insert lulusan == update mahasiswa_pt keluar
+			// --------------------------------
+			if ($index_proses < $jumlah_insert)
+			{
+				// Proses dalam bentuk key lowercase
+				$lulusan_do_insert = array_change_key_case($lulusan_do_insert_set[$index_proses], CASE_LOWER);
+				
+				// Simpan id_admisi & nim untuk update data di langitan
+				$id_admisi	= $lulusan_do_insert['id_admisi'];
+				$nim_mhs	= $lulusan_do_insert['nim_mhs'];
+				$id_reg_pd	= $lulusan_do_insert['id_reg_pd'];
+				$nm_status	= $lulusan_do_insert['nm_status_pengguna'];
+				
+				// Hilangkan yang tidak diperlukan di tabel mahasiswa_pt
+				unset($lulusan_do_insert['id_mhs_status']);
+				unset($lulusan_do_insert['nim_mhs']);
+				unset($lulusan_do_insert['id_reg_pd']);
+				unset($lulusan_do_insert['nm_status']);
+				
+				// Build data format
+				$data_update = array(
+					'key'	=> array('id_reg_pd' => $id_reg_pd),
+					'data'	=> $lulusan_do_insert
+				);
+				
+				// Update ke Feeder Mahasiswa PT
+				$update_result = $this->feeder->UpdateRecord($this->token, FEEDER_MAHASISWA_PT, json_encode($data_update));
+				
+				// Jika berhasil update, tidak ada error
+				if ($update_result['result']['error_code'] == 0)
+				{
+					// Pesan Insert lulusan, tampilkan nim
+					$result['message'] = ($index_proses + 1) . " Insert {$nim_mhs} {$nm_status} : Berhasil";
+					
+					// Update status sync
+					$this->rdb->Query("UPDATE admisi SET fd_sync_on = sysdate WHERE id_admisi = {$id_admisi}");
+				}
+				else // saat update mahasiswa_pt gagal
+				{
+					// Tampilkan pesan gagal
+					$result['message'] = ($index_proses + 1) . " Insert {$nim_mhs} {$nm_status} : " . json_encode($update_result['result']);
+				}
+				
+				$result['status'] = SYNC_STATUS_PROSES;
+				
+				// ganti parameter
+				$_POST['index_proses'] = $index_proses + 1;
+				$result['params'] = http_build_query($_POST);
+			}
+			// --------------------------------
+			// Proses Update
+			// --------------------------------
+			else if ($index_proses < ($jumlah_insert + $jumlah_update))
+			{
+				// index berjalan dikurangi jumlah data insert utk mendapatkan index update
+				$index_proses -= $jumlah_insert;
+				
+				// Proses dalam bentuk key lowercase
+				$lulusan_do_update = array_change_key_case($lulusan_do_update_set[$index_proses], CASE_LOWER);
+				
+				// Simpan variabel untuk keperluan update di langitan dan tampilan
+				$id_admisi	= $lulusan_do_update['id_admisi'];
+				$nim_mhs	= $lulusan_do_update['nim_mhs'];
+				$id_reg_pd	= $lulusan_do_update['id_reg_pd'];
+				$nm_status	= $lulusan_do_update['nm_status_pengguna'];
+				
+				// Hilangkan yang tidak diperlukan di tabel mahasiswa_pt
+				unset($lulusan_do_insert['id_mhs_status']);
+				unset($lulusan_do_insert['nim_mhs']);
+				unset($lulusan_do_insert['id_reg_pd']);
+				unset($lulusan_do_insert['nm_status']);
+				
+				// Build data format
+				$data_update = array(
+					'key'	=> array('id_reg_pd' => $id_reg_pd),
+					'data'	=> $lulusan_do_update
+				);
+				
+				// Update ke Feeder Mahasiswa PT
+				$update_result = $this->feeder->UpdateRecord($this->token, FEEDER_MAHASISWA_PT, json_encode($data_update));
+				
+				// Jika berhasil update, tidak ada error
+				if ($update_result['result']['error_code'] == 0)
+				{
+					// Pesan Insert lulusan, tampilkan nim
+					$result['message'] = ($index_proses + 1) . " Update {$nim_mhs} {$nm_status} : Berhasil";
+					
+					// Update status sync
+					$this->rdb->Query("UPDATE admisi SET fd_sync_on = sysdate WHERE id_admisi = {$id_admisi}");
+				}
+				else // saat update mahasiswa_pt gagal
+				{
+					// Tampilkan pesan gagal
+					$result['message'] = ($index_proses + 1) . " Update {$nim_mhs} {$nm_status} : " . json_encode($update_result['result']);
+				}
+				
+				// Status proses
+				$result['status'] = SYNC_STATUS_PROSES;
+				
+				// meneruskan index proses ditambah lagi dengan jumlah data insert
+				$index_proses += $jumlah_insert;
+				
+				// ganti parameter
+				$_POST['index_proses'] = $index_proses + 1;
+				$result['params'] = http_build_query($_POST);
+			}
+			// --------------------------------
+			// Selesai
+			// --------------------------------
+			else
+			{
+				$result['message'] = "Selesai";
+				$result['status'] = SYNC_STATUS_DONE;
+			}
+		}
+		
+		echo json_encode($result);
+	}
+	
+	/**
 	 * Tampilan awal sebelum start sinkronisasi
 	 */
 	function start($mode)
@@ -3003,6 +3211,12 @@ class Sync extends MY_Controller
 			$this->smarty->assign('url', site_url('sync/proses/'.$mode));
 		}
 		
+		if ($mode == 'lulusan_do')
+		{
+			$this->smarty->assign('jenis_sinkronisasi', 'Lulusan / DO / Keluar');
+			$this->smarty->assign('url', site_url('sync/proses/'.$mode));
+		}
+		
 		$this->smarty->assign('mode', $mode);
 		$this->smarty->display('sync/start.tpl');
 	}
@@ -3063,6 +3277,11 @@ class Sync extends MY_Controller
 		else if ($mode == 'hapus_mk_kurikulum')
 		{
 			$this->proses_hapus_mk_kurikulum();
+		}
+		
+		else if ($mode == 'lulusan_do')
+		{
+			$this->proses_lulusan_do();
 		}
 		
 		else 

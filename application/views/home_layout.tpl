@@ -8,7 +8,7 @@
 		<meta name="msapplication-config" content="none"/>
 		
 		<!-- Bootstrap -->
-		<link href="{base_url('assets/bootstrap/css/bootstrap.min.css')}" rel="stylesheet">
+		<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 		
 		<style type="text/css">
 			body { padding-top: 40px; }
@@ -76,6 +76,7 @@
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Synchronize Data <i class="caret"></i></a>
 							<ul class="dropdown-menu">
 								<li><a href="{site_url('sync/mahasiswa')}">Sync Mahasiswa</a></li>
+								<li><a href="{site_url('sync/lulusan_do')}">Sync Lulusan / DO</a></li>
 								<li role="separator" class="divider"></li>
 								<li><a href="{site_url('sync_del/mk_kurikulum')}"><span class="text-danger">Hapus MK Kurikulum</span></a></li>
 								<li role="separator" class="divider"></li>
@@ -130,9 +131,12 @@
 		{if isset($debug)}<pre>{$debug}</pre>{/if}
 
 		<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-		<script src="{base_url('assets/jquery/jquery-1.12.4.min.js')}"></script>
+		<script
+			  src="https://code.jquery.com/jquery-1.12.4.min.js"
+			  integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ="
+			  crossorigin="anonymous"></script>
 		<!-- Include all compiled plugins (below), or include individual files as needed -->
-		<script src="{base_url('assets/bootstrap/js/bootstrap.min.js')}"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 		{block name='footer-script'}{/block}
 	</body>
 </html>

@@ -161,8 +161,6 @@ class Feeder
 		return $this->client->getProxy()->DeleteRecordset($token, $table, $data);
 	}
 	
-	
-	
 	public function GetChangeLog($token)
 	{
 		return $this->client->getProxy()->GetChangeLog($token);
