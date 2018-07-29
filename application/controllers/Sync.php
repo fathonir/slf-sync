@@ -165,7 +165,6 @@ class Sync extends MY_Controller
 			
 			$mahasiswa_set = $this->rdb->QueryToArray($sql_mahasiswa_insert);
 			
-			
 			// Ambil mahasiswa_pt yg akan insert
 			$sql_mahasiswa_pt_insert = file_get_contents(APPPATH.'models/sql/mahasiswa-pt-insert.sql');
 			$sql_mahasiswa_pt_insert = strtr($sql_mahasiswa_pt_insert, array(
@@ -370,7 +369,7 @@ class Sync extends MY_Controller
 				// $result['message'] = ($index_proses + 1) . " {$mahasiswa_pt_insert['nipd']} : " . json_encode($mahasiswa_insert) . "\n" . json_encode($mahasiswa_pt_insert);
 				
 				// Jika tidak ada no KTP / Identitas, diganti 0
-				if ($mahasiswa_insert['nik'] == '')
+				if ($mahasiswa_insert['nik'] == '' || !is_numeric($mahasiswa_insert['nik']))
 				{
 					$mahasiswa_insert['nik'] = '0';
 				}
@@ -397,15 +396,7 @@ class Sync extends MY_Controller
 						$is_sandbox = ($this->session->userdata('is_sandbox') == TRUE) ? '1' : '0';
 						
 						// Melakukan update ke DB Langitan id_pd dan id_reg_pd hasil insert
-						//$this->rdb->Query(
-						//	"INSERT INTO feeder_mahasiswa (ID_PD, ID_MHS, LAST_SYNC, LAST_UPDATE, IS_SANDBOX) 
-						//		VALUES ('{$mahasiswa_pt_insert['id_pd']}', {$id_mhs}, to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS'), to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS'), {$is_sandbox})");
-						$this->rdb->Query("UPDATE pengguna SET fd_id_pd = '{$mahasiswa_pt_insert['id_pd']}', fd_sync_on = to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS') WHERE id_pengguna = {$id_pengguna}");		
-						
-						//$this->rdb->Query(
-						//	"INSERT INTO feeder_mahasiswa_pt (ID_REG_PD, ID_MHS, LAST_SYNC, LAST_UPDATE, IS_SANDBOX) 
-						//		VALUES ('{$insert_pt_result['result']['id_reg_pd']}', {$id_mhs}, to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS'), to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS'), {$is_sandbox})");
-								
+						$this->rdb->Query("UPDATE pengguna SET fd_id_pd = '{$mahasiswa_pt_insert['id_pd']}', fd_sync_on = to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS') WHERE id_pengguna = {$id_pengguna}");
 						$this->rdb->Query("UPDATE mahasiswa SET fd_id_reg_pd = '{$insert_pt_result['result']['id_reg_pd']}', fd_sync_on = to_date('{$time_sync}', 'YYYY-MM-DD HH24:MI:SS') WHERE id_mhs = {$id_mhs}");
 					}
 					else // saat insert mahasiswa_pt gagal
@@ -437,7 +428,7 @@ class Sync extends MY_Controller
 			{
 				// index berjalan dikurangi jumlah data insert utk mendapatkan index update
 				$index_proses -= $jumlah_insert;
-				
+
 				// Proses dalam bentuk key lowercase
 				$mahasiswa_update = array_change_key_case($mahasiswa_update_set[$index_proses], CASE_LOWER);
 				$mahasiswa_pt_update = array_change_key_case($mahasiswa_pt_update_set[$index_proses], CASE_LOWER);
@@ -1657,9 +1648,6 @@ class Sync extends MY_Controller
 			$data_update_set = $this->session->userdata('data_update_set');
 			$jumlah_update = count($data_update_set);
 			
-			// Waktu Sinkronisasi
-			$time_sync = date('Y-m-d H:i:s');
-			
 			// --------------------------------
 			// Proses Insert
 			// --------------------------------
@@ -2412,9 +2400,6 @@ class Sync extends MY_Controller
 			$data_update_set = $this->session->userdata('data_update_set');
 			$jumlah_update = count($data_update_set);
 			
-			// Waktu Sinkronisasi
-			$time_sync = date('Y-m-d H:i:s');
-			
 			// --------------------------------
 			// Proses Insert
 			// --------------------------------
@@ -2699,9 +2684,6 @@ class Sync extends MY_Controller
 			$kuliah_mahasiswa_update_set = $this->session->userdata('kuliah_mahasiswa_update_set');
 			$jumlah_update = count($kuliah_mahasiswa_update_set);
 			
-			// Waktu Sinkronisasi
-			$time_sync = date('Y-m-d H:i:s');
-			
 			// --------------------------------
 			// Proses Insert
 			// --------------------------------
@@ -2900,9 +2882,6 @@ class Sync extends MY_Controller
 			// Ambil dari cache
 			$lulusan_do_update_set = $this->session->userdata('lulusan_do_update_set');
 			$jumlah_update = count($lulusan_do_update_set);
-			
-			// Waktu Sinkronisasi
-			$time_sync = date('Y-m-d H:i:s');
 			
 			// --------------------------------
 			// Proses Insert. Insert lulusan == update mahasiswa_pt keluar
