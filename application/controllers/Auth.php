@@ -48,6 +48,7 @@ class Auth extends MY_Controller
 			{
 				$this->smarty->assign('error_message', $result);
 				$this->smarty->display('front/index.tpl');
+				return;
 			}
 			else // simpan token
 			{
@@ -62,6 +63,7 @@ class Auth extends MY_Controller
 				{
 					$this->smarty->assign('error_message', "Kode PT di Langitan belum di set");
 					$this->smarty->display('front/index.tpl');
+					return;
 				}
 				else
 				{
@@ -81,10 +83,14 @@ class Auth extends MY_Controller
 					// Data perguruan tinggi langitan
 					$this->session->set_userdata('pt', array_change_key_case($pt_set[0]));
 
-					redirect('home');
+					redirect('home'); 
+					return;
 				}
 			}
 		}
+		
+		// Langsung redirect jika bukan POST
+		redirect(site_url());
 	}
 
 	function logout()
