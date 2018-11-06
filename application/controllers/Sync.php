@@ -2343,7 +2343,7 @@ class Sync extends MY_Controller
 			
 			$this->session->set_userdata('data_insert_set', $data_set);
 			
-			$result['message'] = 'Ambil data Sistem Langitan yang akan di proses Entri. Jumlah data: ' . count($data_set);
+			$result['message'] = 'Ambil data Sistem Langitan yang akan di proses Entri. Jumlah data: ' . count($data_set) ;
 			$result['status'] = SYNC_STATUS_PROSES;
 			//$result['message'] = 'Ambil data Sistem Langitan yang akan di proses Entri. Jumlah data: ' . print_r($data_set);
 			//$result['status'] = SYNC_STATUS_DONE;
@@ -2439,9 +2439,21 @@ class Sync extends MY_Controller
 				}
 				else // saat insert nilai gagal
 				{
-					// Pesan insert jika gagal
-					$result['message'] = ($index_proses + 1) . " Insert {$nama_kelas} {$mhs} Nilai = {$nilai_angka} ({$nilai_huruf} : $nilai_indeks) : Gagal. " . json_encode($insert_result['result']);
-					$result['message'] .= "\n" . json_encode($data_insert);
+					// error_code 800 : Data nilai dari id_kelas_kuliah dan id_registrasi_mahasiswa ini sudah ada
+					if ($insert_result['result']['error_code'] == 800)
+					{
+						// Pesan data sudah ada
+						$result['message'] = ($index_proses + 1) . " Insert {$nama_kelas} {$mhs} Nilai = {$nilai_angka} ({$nilai_huruf} : $nilai_indeks) : Gagal insert. {$insert_result['result']['error_desc']}. Lakukan Sinkronisasi Ulang pada Prodi / Kelas ini.";
+						
+						// Update status sync di langitan, agar bisa di update untuk sinkron ulang
+						$this->rdb->Query("UPDATE pengambilan_mk SET fd_id_kls = '{$data_insert['id_kls']}', fd_id_reg_pd = '{$data_insert['id_reg_pd']}', fd_sync_on = created_on, updated_on = sysdate WHERE id_pengambilan_mk = {$id_pengambilan_mk}");
+					}
+					else
+					{
+						// Pesan insert jika gagal
+						$result['message'] = ($index_proses + 1) . " Insert {$nama_kelas} {$mhs} Nilai = {$nilai_angka} ({$nilai_huruf} : $nilai_indeks) : Gagal. " . json_encode($insert_result['result']);
+						$result['message'] .= "\n" . json_encode($data_insert);
+					}
 				}
 				
 				$result['status'] = SYNC_STATUS_PROSES;
