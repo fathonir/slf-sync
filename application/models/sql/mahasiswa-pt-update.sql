@@ -5,9 +5,9 @@
  */
 
 SELECT 
-	m.id_mhs, fmpt.id_reg_pd,
+	m.id_mhs, m.fd_id_reg_pd as id_reg_pd,
 	'@id_sms' as id_sms,
-	fm.id_pd,
+	p.fd_id_pd as id_pd,
 	'@id_sp' as id_sp,
 
 	/* Jenis pendaftaran */
@@ -36,11 +36,9 @@ FROM mahasiswa m
 JOIN pengguna p ON p.id_pengguna = m.id_pengguna
 JOIN program_studi ps ON ps.id_program_studi = m.id_program_studi
 JOIN perguruan_tinggi pt ON pt.id_perguruan_tinggi = p.id_perguruan_tinggi
-JOIN feeder_mahasiswa fm ON fm.id_mhs = m.id_mhs
-JOIN feeder_mahasiswa_pt fmpt ON fmpt.id_mhs = m.id_mhs
 WHERE 
 	pt.npsn = '@npsn' AND
 	ps.kode_program_studi = '@kode_prodi' AND
 	m.thn_angkatan_mhs = '@angkatan' AND
-	(m.id_mhs IN (SELECT id_mhs FROM feeder_mahasiswa_pt WHERE last_sync < last_update) OR m.id_mhs IN (SELECT id_mhs FROM feeder_mahasiswa WHERE last_sync < last_update))
+	m.updated_on > m.fd_sync_on
 ORDER BY m.nim_mhs ASC

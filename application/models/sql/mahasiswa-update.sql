@@ -5,7 +5,7 @@
  */
 
 SELECT 
-	m.id_mhs, fm.id_pd,
+	m.id_mhs, p.fd_id_pd as id_pd,
 
 	/* Informasi Mahasiswa : nama, tmpt & lahir, ibu kandung di exclude dr update */
 	decode(p.kelamin_pengguna, 1, 'L', 2, 'P', NULL, 'L') as jk, /* default Laki-Laki */
@@ -63,10 +63,9 @@ FROM mahasiswa m
 JOIN pengguna p ON p.id_pengguna = m.id_pengguna
 JOIN program_studi ps ON ps.id_program_studi = m.id_program_studi
 JOIN perguruan_tinggi pt ON pt.id_perguruan_tinggi = p.id_perguruan_tinggi
-JOIN feeder_mahasiswa fm ON fm.id_mhs = m.id_mhs
 WHERE 
 	pt.npsn = '@npsn' AND
 	ps.kode_program_studi = '@kode_prodi' AND
 	m.thn_angkatan_mhs = '@angkatan' AND
-	(m.id_mhs IN (SELECT id_mhs FROM feeder_mahasiswa_pt WHERE last_sync < last_update) OR m.id_mhs IN (SELECT id_mhs FROM feeder_mahasiswa WHERE last_sync < last_update))
+	m.updated_on > m.fd_sync_on
 ORDER BY 1 ASC
