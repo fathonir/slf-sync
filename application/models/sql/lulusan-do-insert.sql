@@ -7,7 +7,7 @@ SELECT
     m.nim_mhs, A.id_admisi, sp.nm_status_pengguna,
     M.fd_id_reg_pd AS id_reg_pd, 
     sp.fd_id_jns_keluar AS id_jns_keluar, 
-	to_char(A.tgl_keluar, 'YYYY-MM-DD') as tgl_keluar,
+	COALESCE(to_char(pw.tgl_sk_yudisium, 'YYYY-MM-DD'), to_char(A.tgl_keluar, 'YYYY-MM-DD')) as tgl_keluar,
     COALESCE(pw.sk_yudisium, A.no_sk) AS sk_yudisium, 
     COALESCE(to_char(pw.tgl_sk_yudisium, 'YYYY-MM-DD'), to_char(A.tgl_sk, 'YYYY-MM-DD')) AS tgl_sk_yudisium,
     pw.ipk,
