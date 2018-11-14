@@ -19,6 +19,7 @@
 						<th></th>
 						<th>Update</th>
 						<th>Insert</th>
+						<th>Delete</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -30,6 +31,7 @@
 						<td></td>
 						<td class="text-center text-warning">&#8710;{$jumlah.update}</td>
 						<td class="text-center text-success">+{$jumlah['insert']}</td>
+						<td class="text-center text-danger">-{$jumlah['delete']}</td>
 					</tr>
 				</tbody>
 			</table>

@@ -2105,6 +2105,7 @@ class Sync extends MY_Controller
 		$jumlah['linked'] = $data_set[1]['JUMLAH'];
 		$jumlah['update'] = $data_set[2]['JUMLAH'];
 		$jumlah['insert'] = $data_set[3]['JUMLAH'];
+		$jumlah['delete'] = $data_set[4]['JUMLAH'];
 		
 		$this->smarty->assign('jumlah', $jumlah);
 		
@@ -2382,6 +2383,39 @@ class Sync extends MY_Controller
 			$result['status'] = SYNC_STATUS_PROSES;
 			
 			// ganti parameter
+			$_POST['mode'] = MODE_AMBIL_DATA_LANGITAN_3;
+			$result['params'] = http_build_query($_POST);
+		}
+		// -----------------------------------
+		// Ambil data untuk Delete
+		// -----------------------------------
+		else if ($mode == MODE_AMBIL_DATA_LANGITAN_3)
+		{
+			// Parameter
+			$kode_prodi = $this->input->post('kode_prodi');
+			$id_smt		= $this->input->post('semester');
+			
+			// Konversi format semester ke id_semester
+			$sql_semester_raw = file_get_contents(APPPATH.'models/sql/semester-konversi.sql');
+			$sql_semester = strtr($sql_semester_raw, array('@npsn' => $this->satuan_pendidikan['npsn'], '@id_smt' => $id_smt));
+			$semester_langitan = $this->rdb->QueryToArray($sql_semester);
+			$id_semester = $semester_langitan[0]['ID_SEMESTER'];
+			
+			// Ambil peserta kuliah yg akan di update
+			$sql_nilai_raw = file_get_contents(APPPATH.'models/sql/nilai-per-prodi-delete.sql');
+			$sql_nilai = strtr($sql_nilai_raw, array(
+				'@npsn' => $this->satuan_pendidikan['npsn'],
+				'@kode_prodi' => $kode_prodi,
+				'@smt' => $id_semester
+			));
+			$data_set = $this->rdb->QueryToArray($sql_nilai);
+			
+			$this->session->set_userdata('data_delete_set', $data_set);
+			
+			$result['message'] = 'Ambil data Sistem Langitan yang akan di proses Delete. Jumlah data: ' . count($data_set);
+			$result['status'] = SYNC_STATUS_PROSES;
+			
+			// ganti parameter
 			$_POST['mode'] = MODE_SYNC;
 			$result['params'] = http_build_query($_POST);
 		}
@@ -2392,13 +2426,17 @@ class Sync extends MY_Controller
 		{
 			$index_proses = isset($_POST['index_proses']) ? $_POST['index_proses'] : 0;
 			
-			// Ambil dari cache
+			// Ambil data insert
 			$data_insert_set = $this->session->userdata('data_insert_set');
 			$jumlah_insert = count($data_insert_set);
 			
-			// Ambil dari cache
+			// Ambil data update
 			$data_update_set = $this->session->userdata('data_update_set');
 			$jumlah_update = count($data_update_set);
+			
+			// Ambil data delete
+			$data_delete_set = $this->session->userdata('data_delete_set');
+			$jumlah_delete = count($data_delete_set);
 			
 			// --------------------------------
 			// Proses Insert
@@ -2523,6 +2561,68 @@ class Sync extends MY_Controller
 				
 				// meneruskan index proses ditambah lagi dengan jumlah data insert
 				$index_proses += $jumlah_insert;
+				
+				// ganti parameter
+				$_POST['index_proses'] = $index_proses + 1;
+				$result['params'] = http_build_query($_POST);
+			}
+			// --------------------------------
+			// Proses Delete
+			// --------------------------------
+			else if ($index_proses < ($jumlah_insert + $jumlah_update + $jumlah_delete))
+			{
+				// index berjalan dikurangi jumlah data insert+update utk mendapatkan index delete
+				$index_proses -= ($jumlah_insert + $jumlah_update);
+				
+				// Proses dalam bentuk key lowercase
+				$data_delete = array_change_key_case($data_delete_set[$index_proses], CASE_LOWER);
+				
+				// Simpan informasi mahasiswa
+				$id_pengambilan_mk	= $data_delete['id_pengambilan_mk'];
+				$mhs				= $data_delete['mhs'];
+				$id_kls				= $data_delete['id_kls'];
+				$id_reg_pd			= $data_delete['id_reg_pd'];
+				$nilai_huruf		= $data_delete['nilai_huruf'];
+				$nilai_angka		= $data_delete['nilai_angka'];
+				$nilai_indeks		= $data_delete['nilai_indeks'];
+				$nama_kelas			= $data_delete['nama_kelas'];
+				
+				// Hilangkan data tdk diperlukan untuk delete
+				unset($data_delete['id_pengambilan_mk']);
+				unset($data_delete['mhs']);
+				unset($data_delete['id_kls']);
+				unset($data_delete['id_reg_pd']);
+				unset($data_delete['nama_kelas']);
+				
+				// Build data format
+				$data_delete_json = array(
+					'id_kls' => $id_kls, 
+					'id_reg_pd' => $id_reg_pd
+				);
+				
+				// Delete ke Feeder nilai
+				$delete_result = $this->feeder->DeleteRecord($this->token, FEEDER_NILAI, json_encode($data_delete_json));
+				
+				// Jika tidak ada masalah delete
+				if ($delete_result['result']['error_code'] == 0)
+				{
+					$result['message'] = ($index_proses + 1) . " Delete {$nama_kelas} {$mhs} Nilai = {$nilai_angka} ({$nilai_huruf} : $nilai_indeks) : Berhasil";
+					
+					// Update status sync di set null
+					$this->rdb->Query("UPDATE pengambilan_mk_del SET fd_sync_on = NULL WHERE id_pengambilan_mk = {$id_pengambilan_mk}");
+				}
+				else
+				{
+					$result['message'] = ($index_proses + 1) . " Delete {$mhs} Nilai: {$nilai_huruf} ({$nilai_angka}) : Gagal. ";
+					$result['message'] .= "({$update_result['result']['error_code']}) {$update_result['result']['error_desc']}";
+					$result['message'] .= "\n" . json_encode($data_update_json);
+				}
+				
+				// Status proses
+				$result['status'] = SYNC_STATUS_PROSES;
+				
+				// meneruskan index proses ditambah lagi dengan jumlah data insert+update
+				$index_proses += ($jumlah_insert + $jumlah_update);
 				
 				// ganti parameter
 				$_POST['index_proses'] = $index_proses + 1;
