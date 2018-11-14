@@ -26,7 +26,7 @@
 			</div>
 			
 			<p></p>
-			<pre id='log' style="height: 500px;"></pre>
+			<pre id='log' style="height: 500px; white-space: pre-wrap"></pre>
 		</div>
 	</div>
 {/block}
