@@ -2119,6 +2119,26 @@ class Sync extends MY_Controller
 		$this->smarty->display('sync/'.$this->uri->segment(2).'.tpl');
 	}
 	
+	public function nilai_transfer_umaha()
+	{
+		$jumlah['feeder'] = '-';
+		
+		// Ambil data nilai transfer
+		$sql_nilai_raw = file_get_contents(APPPATH.'models/sql/nilai-transfer-umaha.sql');
+		$data_set = $this->rdb->QueryToArray($sql_nilai_raw);
+		
+		$jumlah['langitan'] = $data_set[0]['JUMLAH'];
+		$jumlah['linked'] = $data_set[1]['JUMLAH'];
+		$jumlah['update'] = $data_set[2]['JUMLAH'];
+		$jumlah['insert'] = $data_set[3]['JUMLAH'];
+		$jumlah['delete'] = 0;
+
+		$this->smarty->assign('jumlah', $jumlah);
+		
+		$this->smarty->assign('url_sync', site_url('sync/start/'.$this->uri->segment(2)));
+		$this->smarty->display('sync/'.$this->uri->segment(2).'.tpl');
+	}
+	
 	private function proses_nilai()
 	{
 		$result = array('status'=> '', 'time' => '', 'message' => '', 'nextUrl' => site_url('sync/proses/'. $this->uri->segment(3)), 'params'	=> '');
@@ -2614,6 +2634,265 @@ class Sync extends MY_Controller
 				else
 				{
 					$result['message'] = ($index_proses + 1) . " Delete {$mhs} Nilai: {$nilai_huruf} ({$nilai_angka}) : Gagal. ";
+					$result['message'] .= "({$update_result['result']['error_code']}) {$update_result['result']['error_desc']}";
+					$result['message'] .= "\n" . json_encode($data_update_json);
+				}
+				
+				// Status proses
+				$result['status'] = SYNC_STATUS_PROSES;
+				
+				// meneruskan index proses ditambah lagi dengan jumlah data insert+update
+				$index_proses += ($jumlah_insert + $jumlah_update);
+				
+				// ganti parameter
+				$_POST['index_proses'] = $index_proses + 1;
+				$result['params'] = http_build_query($_POST);
+			}
+			// --------------------------------
+			// Selesai
+			// --------------------------------
+			else
+			{
+				$result['message'] = "Selesai";
+				$result['status'] = SYNC_STATUS_DONE;
+			}
+		}
+		
+		echo json_encode($result);
+	}
+	
+	private function proses_nilai_transfer_umaha()
+	{
+		$result = array('status'=> '', 'time' => '', 'message' => '', 'nextUrl' => site_url('sync/proses/'. $this->uri->segment(3)), 'params'	=> '');
+		
+		$mode	= isset($_POST['mode']) ? $_POST['mode'] : MODE_AMBIL_DATA_LANGITAN;		
+		
+		// -----------------------------------
+		// Ambil data untuk Insert
+		// -----------------------------------
+		if ($mode == MODE_AMBIL_DATA_LANGITAN)
+		{						
+			// Ambil data nilai transfer kuliah yg akan insert
+			$sql_nilai_transfer_umaha_raw = file_get_contents(APPPATH.'models/sql/nilai-transfer-umaha-insert.sql');
+			$data_set = $this->rdb->QueryToArray($sql_nilai_transfer_umaha_raw);
+			
+			$this->session->set_userdata('data_insert_set', $data_set);
+			
+			$result['message'] = 'Ambil data Sistem Langitan yang akan di proses Entri. Jumlah data: ' . count($data_set) ;
+			$result['status'] = SYNC_STATUS_PROSES;
+			
+			// ganti parameter
+			$_POST['mode'] = MODE_AMBIL_DATA_LANGITAN_2;
+			$result['params'] = http_build_query($_POST);
+		}
+		// -----------------------------------
+		// Ambil data untuk Update
+		// -----------------------------------
+		else if ($mode == MODE_AMBIL_DATA_LANGITAN_2)
+		{
+			// Ambil peserta kuliah yg akan di update
+			$sql_nilai_transfer_umaha_raw = file_get_contents(APPPATH.'models/sql/nilai-transfer-umaha-update.sql');
+			$data_set = $this->rdb->QueryToArray($sql_nilai_transfer_umaha_raw);
+			
+			$this->session->set_userdata('data_update_set', $data_set);
+			
+			$result['message'] = 'Ambil data Sistem Langitan yang akan di proses Update. Jumlah data: ' . count($data_set);
+			$result['status'] = SYNC_STATUS_PROSES;
+			
+			// ganti parameter
+			$_POST['mode'] = MODE_AMBIL_DATA_LANGITAN_3;
+			$result['params'] = http_build_query($_POST);
+		}
+		// -----------------------------------
+		// Ambil data untuk Delete
+		// -----------------------------------
+		else if ($mode == MODE_AMBIL_DATA_LANGITAN_3)
+		{
+			// Ambil peserta kuliah yg akan di update
+			$sql_nilai_transfer_umaha_raw = file_get_contents(APPPATH.'models/sql/nilai-transfer-umaha-delete.sql');
+			$data_set = $this->rdb->QueryToArray($sql_nilai_transfer_umaha_raw);
+			
+			$this->session->set_userdata('data_delete_set', $data_set);
+			
+			$result['message'] = 'Ambil data Sistem Langitan yang akan di proses Delete. Jumlah data: ' . count($data_set);
+			$result['status'] = SYNC_STATUS_PROSES;
+			
+			// ganti parameter
+			$_POST['mode'] = MODE_SYNC;
+			$result['params'] = http_build_query($_POST);
+		}
+		// -----------------------------------
+		// Proses Sinkronisasi dari data yg sudah diambil
+		// -----------------------------------
+		else if ($mode == MODE_SYNC)
+		{
+			$index_proses = isset($_POST['index_proses']) ? $_POST['index_proses'] : 0;
+			
+			// Ambil data insert
+			$data_insert_set = $this->session->userdata('data_insert_set');
+			$jumlah_insert = count($data_insert_set);
+			
+			// Ambil data update
+			$data_update_set = $this->session->userdata('data_update_set');
+			$jumlah_update = count($data_update_set);
+			
+			// Ambil data delete
+			$data_delete_set = $this->session->userdata('data_delete_set');
+			$jumlah_delete = count($data_delete_set);
+			
+			// --------------------------------
+			// Proses Insert
+			// --------------------------------
+			if ($index_proses < $jumlah_insert)
+			{
+				// Proses dalam bentuk key lowercase
+				$data_insert = array_change_key_case($data_insert_set[$index_proses], CASE_LOWER);
+				
+				// Simpan untuk tampilan sync
+				$id_pengambilan_mk	= $data_insert['id_pengambilan_mk'];
+				$mhs				= $data_insert['mhs'];
+				$kode_mk_asal		= $data_insert['kode_mk_asal'];
+				$nm_mk_asal			= $data_insert['nm_mk_asal'];
+				$sks_asal			= $data_insert['sks_asal'];
+				$sks_diakui			= $data_insert['sks_diakui'];
+				$nilai_huruf_asal	= $data_insert['nilai_huruf_asal'];
+				$nilai_huruf_diakui	= $data_insert['nilai_huruf_diakui'];
+				
+				// Hilangkan variabel tak dibutuhkan
+				unset($data_insert['id_pengambilan_mk']);
+				unset($data_insert['mhs']);
+				
+				// Entri ke Feeder nilai transfer
+				$insert_result = $this->feeder->InsertRecord($this->token, FEEDER_NILAI_TRANSFER, json_encode($data_insert));
+				
+				// Jika berhasil insert, terdapat return id_ekuivalensi
+				if (isset($insert_result['result']['id_ekuivalensi']))
+				{
+					// Pesan Insert, tampilkan nama mahasiswa
+					$result['message'] = ($index_proses + 1) . " Insert {$mhs} {$kode_mk_asal} {$nm_mk_asal} ({$sks_asal} SKS) = {$nilai_huruf_asal} diakui ({$sks_diakui} SKS) {$nilai_huruf_diakui} : Berhasil";
+					
+					// Update status sync
+					$this->rdb->Query("UPDATE pengambilan_mk SET fd_id_ekuivalensi = '{$insert_result['result']['id_ekuivalensi']}', fd_sync_on = sysdate WHERE id_pengambilan_mk = {$id_pengambilan_mk}");
+				}
+				else // saat insert nilai transfer gagal
+				{
+					// Pesan insert jika gagal
+					$result['message'] = ($index_proses + 1) . " Insert {$mhs} {$kode_mk_asal} {$nm_mk_asal} ({$sks_asal} SKS) = {$nilai_huruf_asal} diakui ({$sks_diakui} SKS) {$nilai_huruf_diakui} : Gagal. " . json_encode($insert_result['result']);
+					$result['message'] .= "\n" . json_encode($data_insert);
+				}
+				
+				$result['status'] = SYNC_STATUS_PROSES;
+				
+				// ganti parameter
+				$_POST['index_proses'] = $index_proses + 1;
+				$result['params'] = http_build_query($_POST);
+			}
+			// --------------------------------
+			// Proses Update
+			// --------------------------------
+			else if ($index_proses < ($jumlah_insert + $jumlah_update))
+			{
+				// index berjalan dikurangi jumlah data insert utk mendapatkan index update
+				$index_proses -= $jumlah_insert;
+				
+				// Proses dalam bentuk key lowercase
+				$data_update = array_change_key_case($data_update_set[$index_proses], CASE_LOWER);
+				
+				// Simpan untuk tampilan sync
+				$id_pengambilan_mk	= $data_update['id_pengambilan_mk'];
+				$mhs				= $data_update['mhs'];
+				$kode_mk_asal		= $data_update['kode_mk_asal'];
+				$nm_mk_asal			= $data_update['nm_mk_asal'];
+				$sks_asal			= $data_update['sks_asal'];
+				$sks_diakui			= $data_update['sks_diakui'];
+				$nilai_huruf_asal	= $data_update['nilai_huruf_asal'];
+				$nilai_huruf_diakui	= $data_update['nilai_huruf_diakui'];
+				$id_ekuivalensi		= $data_update['id_ekuivalensi'];
+				
+				// Hilangkan variabel tak dibutuhkan
+				unset($data_update['id_pengambilan_mk']);
+				unset($data_update['mhs']);
+				unset($data_update['id_ekuivalensi']);
+				
+				// Build data format
+				$data_update_json = array(
+					'key'	=> array('id_ekuivalensi' => $id_ekuivalensi),
+					'data'	=> $data_update
+				);
+				
+				// Update ke Feeder Nilai Transfer
+				$update_result = $this->feeder->UpdateRecord($this->token, FEEDER_NILAI_TRANSFER, json_encode($data_update_json));
+				
+				// Jika tidak ada masalah update
+				if ($update_result['result']['error_code'] == 0)
+				{
+					$result['message'] = ($index_proses + 1) . " Update {$mhs} {$kode_mk_asal} {$nm_mk_asal} ({$sks_asal} SKS) = {$nilai_huruf_asal} diakui ({$sks_diakui} SKS) {$nilai_huruf_diakui} : Berhasil";
+					
+					// Update status sync
+					$this->rdb->Query("UPDATE pengambilan_mk SET fd_sync_on = sysdate WHERE id_pengambilan_mk = {$id_pengambilan_mk}");
+				}
+				else
+				{
+					$result['message'] = ($index_proses + 1) . " Update {$mhs} {$kode_mk_asal} {$nm_mk_asal} ({$sks_asal} SKS) = {$nilai_huruf_asal} diakui ({$sks_diakui} SKS) {$nilai_huruf_diakui} : Gagal. ";
+					$result['message'] .= "({$update_result['result']['error_code']}) {$update_result['result']['error_desc']}";
+					$result['message'] .= "\n" . json_encode($data_update_json);
+				}
+				
+				// Status proses
+				$result['status'] = SYNC_STATUS_PROSES;
+				
+				// meneruskan index proses ditambah lagi dengan jumlah data insert
+				$index_proses += $jumlah_insert;
+				
+				// ganti parameter
+				$_POST['index_proses'] = $index_proses + 1;
+				$result['params'] = http_build_query($_POST);
+			}
+			// --------------------------------
+			// Proses Delete
+			// --------------------------------
+			else if ($index_proses < ($jumlah_insert + $jumlah_update + $jumlah_delete))
+			{
+				// index berjalan dikurangi jumlah data insert+update utk mendapatkan index delete
+				$index_proses -= ($jumlah_insert + $jumlah_update);
+				
+				// Proses dalam bentuk key lowercase
+				$data_delete = array_change_key_case($data_delete_set[$index_proses], CASE_LOWER);
+				
+				// Simpan untuk tampilan sync
+				$id_pengambilan_mk	= $data_delete['id_pengambilan_mk'];
+				$mhs				= $data_delete['mhs'];
+				$kode_mk_asal		= $data_delete['kode_mk_asal'];
+				$nm_mk_asal			= $data_delete['nm_mk_asal'];
+				$sks_asal			= $data_delete['sks_asal'];
+				$sks_diakui			= $data_delete['sks_diakui'];
+				$nilai_huruf_asal	= $data_delete['nilai_huruf_asal'];
+				$nilai_huruf_diakui	= $data_delete['nilai_huruf_diakui'];
+				$id_ekuivalensi		= $data_delete['id_ekuivalensi'];
+				
+				// Hilangkan variabel tak dibutuhkan
+				unset($data_update['id_pengambilan_mk']);
+				unset($data_update['mhs']);
+				
+				// Build data format
+				$data_delete_json = array(
+					'id_ekuivalensi' => $id_ekuivalensi
+				);
+				
+				// Delete ke Feeder nilai transfer
+				$delete_result = $this->feeder->DeleteRecord($this->token, FEEDER_NILAI_TRANSFER, json_encode($data_delete_json));
+				
+				// Jika tidak ada masalah delete
+				if ($delete_result['result']['error_code'] == 0)
+				{
+					$result['message'] = ($index_proses + 1) . " Delete {$mhs} {$kode_mk_asal} {$nm_mk_asal} ({$sks_asal} SKS) = {$nilai_huruf_asal} diakui ({$sks_diakui} SKS) {$nilai_huruf_diakui} : Berhasil";
+					
+					// Update status sync di set null
+					$this->rdb->Query("UPDATE pengambilan_mk_del SET fd_sync_on = NULL WHERE id_pengambilan_mk = {$id_pengambilan_mk}");
+				}
+				else
+				{
+					$result['message'] = ($index_proses + 1) . " Delete {$mhs} {$kode_mk_asal} {$nm_mk_asal} ({$sks_asal} SKS) = {$nilai_huruf_asal} diakui ({$sks_diakui} SKS) {$nilai_huruf_diakui} : Gagal. ";
 					$result['message'] .= "({$update_result['result']['error_code']}) {$update_result['result']['error_desc']}";
 					$result['message'] .= "\n" . json_encode($data_update_json);
 				}
@@ -3286,6 +3565,12 @@ class Sync extends MY_Controller
 			$this->smarty->assign('url', site_url('sync/proses/'.$mode));
 		}
 		
+		if ($mode == 'nilai_transfer_umaha')
+		{
+			$this->smarty->assign('jenis_sinkronisasi', 'Nilai Perkuliahan UMAHA Angkatan &lt; 2014');
+			$this->smarty->assign('url', site_url('sync/proses/'.$mode));
+		}
+		
 		if ($mode == 'kuliah_mahasiswa')
 		{
 			$id_smt			= $this->input->post('semester');
@@ -3358,6 +3643,11 @@ class Sync extends MY_Controller
 		else if ($mode == 'nilai_per_prodi')
 		{
 			$this->proses_nilai_per_prodi();
+		}
+		
+		else if ($mode == 'nilai_transfer_umaha')
+		{
+			$this->proses_nilai_transfer_umaha();
 		}
 		
 		else if ($mode == 'kuliah_mahasiswa')

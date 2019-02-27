@@ -105,6 +105,7 @@ define('FEEDER_MATA_KULIAH',		'mata_kuliah');
 define('FEEDER_MK_KURIKULUM',		'mata_kuliah_kurikulum');
 define('FEEDER_KELAS_KULIAH',		'kelas_kuliah');
 define('FEEDER_NILAI',				'nilai');
+define('FEEDER_NILAI_TRANSFER',		'nilai_transfer');
 define('FEEDER_AJAR_DOSEN',			'ajar_dosen');
 
 
