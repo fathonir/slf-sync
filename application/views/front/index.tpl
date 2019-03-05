@@ -19,7 +19,7 @@
 				<div class="form-group">
 					<label for="wsdl" class="col-sm-2 control-label">Alamat Aplikasi Feeder</label>
 					<div class="col-sm-4">
-						<input type="text" class="form-control" autocomplete="on" autofocus="true" id="wsdl" name="wsdl" placeholder="http://localhost:8082/" value="http://localhost:8082/" />
+						<input type="text" class="form-control" autocomplete="on" autofocus="true" id="wsdl" name="wsdl" placeholder="Alamat Feeder" value="" />
 					</div>
 				</div>
 				
@@ -38,7 +38,7 @@
 				<div class="form-group">
 					<label for="wsdl" class="col-sm-2 control-label">Alamat Sistem Langitan</label>
 					<div class="col-sm-4">
-						<input type="text" class="form-control" autocomplete="on" autofocus="true" id="wsdl" name="langitan" value="https://langitan.umaha.ac.id/">
+						<input type="text" class="form-control" autocomplete="on" autofocus="true" id="wsdl" name="langitan" value="" placeholder="Alamat Sistem Langitan">
 					</div>
 				</div>
 				

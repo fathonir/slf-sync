@@ -100,12 +100,15 @@
 								<li><a href="{site_url('sync/kelas_kuliah')}">Sync Kelas Perkuliahan</a></li>
 								<li><a href="{site_url('sync/nilai')}">Sync Nilai Perkuliahan</a></li>
 								<li><a href="{site_url('sync/nilai_per_prodi')}">Sync Nilai Perkuliahan (Per Prodi)</a></li>
-								<li><a href="{site_url('sync/nilai_transfer_umaha')}">Sync Nilai Transfer UMAHA (&lt;2014)</a></li>
 								<li><a href="{site_url('sync/ajar_dosen')}">Sync Dosen Pengajar Kelas</a></li>
 								
 								<li role="separator" class="divider"></li>
 								<li><a href="{site_url('sync/kuliah_mahasiswa')}">Sync Aktivitas Mahasiswa</a></li>
 								<li><a href="{site_url('sync_link/kuliah_mahasiswa')}"><span class="text-info">Link Aktivitas Mahasiswa</span></a></li>
+								
+								<li role="separator" class="divider"></li>
+								<li><a href="{site_url('sync/nilai_transfer')}">Sync Nilai Transfer</a></li>
+								<li><a href="{site_url('sync/nilai_transfer_umaha')}">Sync Nilai Transfer UMAHA (&lt;2014)</a></li>
 							</ul>
 						</li>
 						<li>
