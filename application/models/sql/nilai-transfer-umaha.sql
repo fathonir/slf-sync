@@ -13,6 +13,7 @@ where
 	and	m.thn_angkatan_mhs < 2014
 	and m.fd_id_reg_pd is not null 
 	and s.thn_akademik_semester < 2014
+	and pmk.nilai_huruf is not null
 union all
 /* Jumlah sudah link */
 select count(*) as jumlah
@@ -25,6 +26,7 @@ where
 	and	m.thn_angkatan_mhs < 2014
 	and m.fd_id_reg_pd is not null
 	and s.thn_akademik_semester < 2014
+	and pmk.nilai_huruf is not null
 	and pmk.fd_id_ekuivalensi is not null
 union all
 /* Jumlah bakal update */
@@ -38,6 +40,7 @@ where
 	and	m.thn_angkatan_mhs < 2014
 	and m.fd_id_reg_pd is not null 
     and s.thn_akademik_semester < 2014
+	and pmk.nilai_huruf is not null
 	and pmk.fd_id_ekuivalensi is not null and pmk.updated_on > pmk.fd_sync_on
 union all
 /* Jumlah bakal insert */
@@ -51,4 +54,5 @@ where
 	and	m.thn_angkatan_mhs < 2014
 	and m.fd_id_reg_pd is not null 
     and s.thn_akademik_semester < 2014
+	and pmk.nilai_huruf is not null
 	and pmk.fd_id_ekuivalensi is null
