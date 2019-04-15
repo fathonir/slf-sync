@@ -3493,10 +3493,10 @@ class Sync extends MY_Controller
 				$nm_status	= $lulusan_do_insert['nm_status_pengguna'];
 				
 				// Hilangkan yang tidak diperlukan di tabel mahasiswa_pt
-				unset($lulusan_do_insert['id_mhs_status']);
+				unset($lulusan_do_insert['id_admisi']);
 				unset($lulusan_do_insert['nim_mhs']);
 				unset($lulusan_do_insert['id_reg_pd']);
-				unset($lulusan_do_insert['nm_status']);
+				unset($lulusan_do_insert['nm_status_pengguna']);
 				
 				// Build data format
 				$data_update = array(
@@ -3519,7 +3519,7 @@ class Sync extends MY_Controller
 				else // saat update mahasiswa_pt gagal
 				{
 					// Tampilkan pesan gagal
-					$result['message'] = ($index_proses + 1) . " Insert {$nim_mhs} {$nm_status} : " . json_encode($update_result['result']);
+					$result['message'] = ($index_proses + 1) . " Insert {$nim_mhs} {$nm_status} : " . json_encode($update_result['result']) . "\n" . json_encode($data_update);
 				}
 				
 				$result['status'] = SYNC_STATUS_PROSES;
@@ -3546,10 +3546,10 @@ class Sync extends MY_Controller
 				$nm_status	= $lulusan_do_update['nm_status_pengguna'];
 				
 				// Hilangkan yang tidak diperlukan di tabel mahasiswa_pt
-				unset($lulusan_do_insert['id_mhs_status']);
+				unset($lulusan_do_insert['id_admisi']);
 				unset($lulusan_do_insert['nim_mhs']);
 				unset($lulusan_do_insert['id_reg_pd']);
-				unset($lulusan_do_insert['nm_status']);
+				unset($lulusan_do_insert['nm_status_pengguna']);
 				
 				// Build data format
 				$data_update = array(
