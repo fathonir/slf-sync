@@ -1,7 +1,7 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed'); 
 
 // Include nusoap class
-require APPPATH . 'third_party/nusoap/lib/nusoap.php';
+require FCPATH . 'vendor/econea/nusoap/src/nusoap.php';
 
 /**
  * @property nusoap_client $client Description
@@ -12,7 +12,7 @@ class Feeder
 	
 	function __construct($params)
 	{
-		$this->client = new nusoap_client($params['url'], TRUE);
+		$this->client = new nusoap_client($params['url'], 'wsdl');
 	}
 	
 	public function GetToken($username, $password)

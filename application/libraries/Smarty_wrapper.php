@@ -1,6 +1,6 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed'); 
 
-require APPPATH . 'third_party/smarty/libs/Smarty.class.php';
+require FCPATH . 'vendor/smarty/smarty/libs/Smarty.class.php';
 
 class Smarty_wrapper extends Smarty
 {

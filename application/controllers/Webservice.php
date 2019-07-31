@@ -1,4 +1,7 @@
-<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+<?php 
+ini_set('memory_limit', '-1');
+set_time_limit(0);
+if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
 /**
  * @property string $token Token
@@ -108,11 +111,7 @@ class Webservice extends MY_Controller
 	
 	function table_data_csv($table)
 	{
-		// Disable execution limit
-		set_time_limit(0);
 		
-		// Disable memory_limit
-		ini_set('memory_limit', '-1');
 		
 		// Nama File
 		$file_name = "{$this->satuan_pendidikan['npsn']}_{$table}_" . date('Y-m-d');
@@ -129,16 +128,38 @@ class Webservice extends MY_Controller
 		$filter = null;
 		
 		// Jika tabel sms (program studi)
-		if ($table == 'sms')
+		if ($table == FEEDER_SMS)
 		{			
 			// Modify parameter
 			$filter = "p.id_sp = '{$this->satuan_pendidikan['id_sp']}'";
 		}
 		
-		if ($table == 'mata_kuliah')
-		{
+		if ($table == FEEDER_MATA_KULIAH)
 			$order = 'id_mk';
-		}
+		
+		if ($table == FEEDER_KURIKULUM)
+			$order = 'id_kurikulum_sp';
+		
+		if ($table == FEEDER_MK_KURIKULUM)
+			$order = 'id_kurikulum_sp,id_mk';
+		
+		if ($table == FEEDER_MAHASISWA)
+			$order = 'id_pd';
+		
+		if ($table == FEEDER_MAHASISWA_PT)
+			$order = 'id_reg_pd';
+		
+		if ($table == FEEDER_DOSEN)
+			$order = 'id_sdm';
+		
+		if ($table == FEEDER_DOSEN_PT)
+			$order = 'id_reg_ptk';
+		
+		if ($table == FEEDER_KELAS_KULIAH)
+			$order = 'id_kls';
+		
+		if ($table == FEEDER_NILAI)
+			$order = 'id_kls,id_reg_pd';
 		
 		// Ambil jumlah
 		$result = $this->feeder->GetCountRecordset($this->token, $table);
@@ -150,7 +171,8 @@ class Webservice extends MY_Controller
 		
 		$i_row = 0;
 		
-		for ($page = 0; $page <= $max_page; $page++)
+		// 662
+		for ($page = 601; $page <= 662; $page++)
 		{
 			$offset = $page * $limit;
 			$result = $this->feeder->GetRecordset($this->token, $table, $filter, $order, $limit, $offset);
@@ -166,6 +188,11 @@ class Webservice extends MY_Controller
 				}
 				
 				$row_values = array_values($row);
+				
+				// Replace karakter enter dengan spasi
+				for ($i_value = 0; $i_value < count($row_values); $i_value++)
+					$row_values[$i_value] = trim(preg_replace('/\s+/', ' ', $row_values[$i_value]));
+				
 				fputcsv($handle, $row_values);
 				
 				$i_row++;
