@@ -9,8 +9,7 @@ SELECT kls.id_kelas_mk, mk.kd_mata_kuliah||' '||mk.nm_mata_kuliah||' ('||nk.nama
     (SELECT count(*) FROM pengambilan_mk pmk WHERE  pmk.id_kelas_mk = kls.id_kelas_mk AND status_apv_pengambilan_mk = 1 AND 
     (/* Insert Baru */(fd_id_kls IS NULL AND fd_id_reg_pd IS NULL) OR /* Update*/ (fd_id_kls IS NOT NULL AND fd_id_reg_pd IS NOT NULL AND fd_sync_on < updated_on))) AS perlu_sync
 FROM kelas_mk kls
-JOIN kurikulum_mk kmk ON kmk.id_kurikulum_mk = kls.id_kurikulum_mk
-JOIN mata_kuliah mk ON mk.id_mata_kuliah = kmk.id_mata_kuliah
+JOIN mata_kuliah mk ON mk.id_mata_kuliah = kls.id_mata_kuliah
 JOIN nama_kelas nk ON nk.id_nama_kelas = kls.no_kelas_mk
 JOIN program_studi ps ON ps.id_program_studi = kls.id_program_studi
 JOIN fakultas f ON f.id_fakultas = ps.id_fakultas
