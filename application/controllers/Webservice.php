@@ -172,7 +172,7 @@ class Webservice extends MY_Controller
 		$i_row = 0;
 		
 		// 662
-		for ($page = 601; $page <= 662; $page++)
+		for ($page = 0; $page <= $max_page; $page++)
 		{
 			$offset = $page * $limit;
 			$result = $this->feeder->GetRecordset($this->token, $table, $filter, $order, $limit, $offset);
