@@ -804,10 +804,14 @@ class Sync extends MY_Controller
 				// Simpan id_mk dan id_mata_kuliah untuk update data di langitan
 				$id_mk			= $mata_kuliah_update['id_mk'];
 				$id_mata_kuliah	= $mata_kuliah_update['id_mata_kuliah'];
+				$kode_mk		= $mata_kuliah_update['kode_mk'];
+				$nm_mk			= $mata_kuliah_update['nm_mk'];
 				
 				// Hilangkan id_mk & id_mata_kuliah
 				unset($mata_kuliah_update['id_mk']);
 				unset($mata_kuliah_update['id_mata_kuliah']);
+				unset($mata_kuliah_update['kode_mk']);
+				unset($mata_kuliah_update['nm_mk']);
 				
 				// Build data format
 				$data_update = array(
@@ -821,7 +825,7 @@ class Sync extends MY_Controller
 				// Jika tidak ada masalah update
 				if ($update_result['result']['error_code'] == 0)
 				{
-					$result['message'] = ($index_proses + 1) . " Update {$mata_kuliah_update['kode_mk']} {$mata_kuliah_update['nm_mk']} : Berhasil";
+					$result['message'] = ($index_proses + 1) . " Update {$kode_mk} {$nm_mk} : Berhasil";
 					
 					$this->rdb->Query("UPDATE mata_kuliah SET fd_sync_on = sysdate WHERE id_mata_kuliah = {$id_mata_kuliah}");
 				}
