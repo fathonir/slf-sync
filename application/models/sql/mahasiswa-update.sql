@@ -10,7 +10,7 @@ SELECT
 	/* Informasi Mahasiswa : nama, tmpt & lahir, ibu kandung di exclude dr update */
 	decode(p.kelamin_pengguna, 1, 'L', 2, 'P', NULL, 'L') as jk, /* default Laki-Laki */
 	null as nisn, 
-	null as nik,
+	NVL(m.nik_mhs, CASE WHEN LENGTH(cmb.nik_c_mhs) <= 16 THEN cmb.nik_c_mhs END) AS nik,
 	NVL((select id_feeder from agama where agama.id_agama = p.id_agama), 1) as id_agama,  /* default Islam */
 	0 as id_kk,
 
@@ -63,6 +63,7 @@ FROM mahasiswa m
 JOIN pengguna p ON p.id_pengguna = m.id_pengguna
 JOIN program_studi ps ON ps.id_program_studi = m.id_program_studi
 JOIN perguruan_tinggi pt ON pt.id_perguruan_tinggi = p.id_perguruan_tinggi
+LEFT JOIN calon_mahasiswa_baru cmb ON cmb.id_c_mhs = M.id_c_mhs
 WHERE 
 	pt.npsn = '@npsn' AND
 	ps.kode_program_studi = '@kode_prodi' AND

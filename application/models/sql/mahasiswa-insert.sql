@@ -10,7 +10,7 @@ SELECT
 	P.nm_pengguna AS nm_pd,
 	decode(P.kelamin_pengguna, 1, 'L', 2, 'P', NULL, 'L') AS jk, /* default Laki-Laki */
 	NULL AS nisn, 
-	CASE WHEN LENGTH(cmb.nik_c_mhs) <= 16 THEN cmb.nik_c_mhs END AS nik,
+	NVL(m.nik_mhs, CASE WHEN LENGTH(cmb.nik_c_mhs) <= 16 THEN cmb.nik_c_mhs END) AS nik,
 	NVL((SELECT nm_kota FROM kota WHERE kota.id_kota = m.LAHIR_KOTA_MHS), 'Belum Terekam') as tmpt_lahir,
 	NVL(to_char(tgl_lahir_pengguna, 'YYYY-MM-DD'), '1900-01-01') as tgl_lahir,
 	NVL((select id_feeder from agama where agama.id_agama = p.id_agama), 1) as id_agama,  /* default Islam */
