@@ -831,7 +831,7 @@ class Sync extends MY_Controller
 				}
 				else
 				{
-					$result['message'] = ($index_proses + 1) . " Update {$mata_kuliah_update['kode_mk']} : Gagal. ";
+					$result['message'] = ($index_proses + 1) . " Update {$kode_mk} : Gagal. ";
 					$result['message'] .= "({$update_result['result']['error_code']}) {$update_result['result']['error_desc']}";
 					$result['message'] .= "\n" . json_encode($data_update);
 				}
