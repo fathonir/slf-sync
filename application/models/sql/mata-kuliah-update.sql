@@ -14,7 +14,7 @@ SELECT
     kredit_semester AS sks_mk,
     kredit_tatap_muka AS sks_tm,
     kredit_praktikum AS sks_prak,
-    kredit_prak_lapangan AS sks_prak_lapangan,
+    kredit_prak_lapangan AS sks_prak_lap,
     kredit_simulasi AS sks_sim,
     mk.metode_pelaksanaan AS metode_pelaksanaan_kuliah,
     mk.ada_sap AS a_sap,
