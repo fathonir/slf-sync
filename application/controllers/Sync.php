@@ -368,12 +368,6 @@ class Sync extends MY_Controller
 				// Enable utk debugging only
 				// $result['message'] = ($index_proses + 1) . " {$mahasiswa_pt_insert['nipd']} : " . json_encode($mahasiswa_insert) . "\n" . json_encode($mahasiswa_pt_insert);
 				
-				// Jika tidak ada no KTP / Identitas, diganti 0
-				if ($mahasiswa_insert['nik'] == '' || !is_numeric($mahasiswa_insert['nik']))
-				{
-					$mahasiswa_insert['nik'] = '0';
-				}
-				
 				// Entri ke Feeder Mahasiswa
 				$insert_result = $this->feeder->InsertRecord($this->token, FEEDER_MAHASISWA, json_encode($mahasiswa_insert));
 				
@@ -523,9 +517,6 @@ class Sync extends MY_Controller
 						$mahasiswa_pt_update['nm_prodi_asal'] = 'Analis kesehatan';
 					}
 				}
-				
-				// Jika tidak ada no KTP / Identitas, diganti 0
-				if ($mahasiswa_update['nik'] == '') $mahasiswa_update['nik'] = '0';
 				
 				// Jika pendaftaran baru, sks diakui wajib 0
 				if ($mahasiswa_pt_update['id_jns_daftar'] == '1') $mahasiswa_pt_update['sks_diakui'] = '0';
