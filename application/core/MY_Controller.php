@@ -17,6 +17,7 @@
  * @property CI_URI $uri
  * @property CI_Cache $cache
  * @property Feeder $feeder
+ * @property Feederws $feederws
  * @property mixed $satuan_pendidikan
  */
 class MY_Controller extends CI_Controller {

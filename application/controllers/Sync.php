@@ -3,10 +3,12 @@
 /**
  * @property CI_Remotedb $rdb Remote DB Sistem Langitan
  * @property string $token Token webservice
+ * @property string $token2 Token webservice 2
  * @property string $npsn Kode Perguruan Tinggi
  * @property array $satuan_pendidikan Row: satuan_pendidikan
  * @property Langitan_model $langitan_model
  * @property PerguruanTinggi_model $pt
+ * @property Feederws $feederws
  */
 class Sync extends MY_Controller 
 {
@@ -23,6 +25,10 @@ class Sync extends MY_Controller
 		
 		// Inisialisasi URL Feeder
 		$this->load->library('feeder', array('url' => $this->session->userdata('wsdl')));
+
+		// Inisialisasi URL Feeder WS 2
+		$this->load->library('feederws', ['url' => $this->session->userdata('ws2url')]);
+		$this->token2 = $this->session->userdata('token2');
 		
 		// Inisialisasi Library RemoteDB
 		$this->load->library('remotedb', NULL, 'rdb');
@@ -441,25 +447,7 @@ class Sync extends MY_Controller
 				// --------------------
 				// Cleansing data
 				// --------------------
-				if ($mahasiswa_update['jk'] == '*') unset($mahasiswa_update['jk']);
-				if ($mahasiswa_update['kode_pos'] == '') unset($mahasiswa_update['kode_pos']);
 				if ( ! filter_var($mahasiswa_update['email'], FILTER_VALIDATE_EMAIL)) unset($mahasiswa_update['email']);
-				if ($mahasiswa_update['rt'] == '') unset($mahasiswa_update['rt']);
-				if ($mahasiswa_update['rw'] == '') unset($mahasiswa_update['rw']);
-				if ($mahasiswa_update['id_jns_tinggal'] == '') unset($mahasiswa_update['id_jns_tinggal']);
-				if ($mahasiswa_update['id_alat_transport'] == '') unset($mahasiswa_update['id_alat_transport']);
-				if ($mahasiswa_update['tgl_lahir_ayah'] == '') unset($mahasiswa_update['tgl_lahir_ayah']);
-				if ($mahasiswa_update['id_jenjang_pendidikan_ayah'] == '') unset($mahasiswa_update['id_jenjang_pendidikan_ayah']);
-				if ($mahasiswa_update['id_pekerjaan_ayah'] == '') unset($mahasiswa_update['id_pekerjaan_ayah']);
-				if ($mahasiswa_update['id_penghasilan_ayah'] == '') unset($mahasiswa_update['id_penghasilan_ayah']);
-				if ($mahasiswa_update['tgl_lahir_ibu'] == '') unset($mahasiswa_update['tgl_lahir_ibu']);
-				if ($mahasiswa_update['id_jenjang_pendidikan_ibu'] == '') unset($mahasiswa_update['id_jenjang_pendidikan_ibu']);
-				if ($mahasiswa_update['id_pekerjaan_ibu'] == '') unset($mahasiswa_update['id_pekerjaan_ibu']);
-				if ($mahasiswa_update['id_penghasilan_ibu'] == '') unset($mahasiswa_update['id_penghasilan_ibu']);
-				if ($mahasiswa_update['tgl_lahir_wali'] == '') unset($mahasiswa_update['tgl_lahir_wali']);
-				if ($mahasiswa_update['id_jenjang_pendidikan_wali'] == '') unset($mahasiswa_update['id_jenjang_pendidikan_wali']);
-				if ($mahasiswa_update['id_pekerjaan_wali'] == '') unset($mahasiswa_update['id_pekerjaan_wali']);
-				if ($mahasiswa_update['id_penghasilan_wali'] == '') unset($mahasiswa_update['id_penghasilan_wali']);
 				
 				// ---------------------------------------------------------------------------------------------
 				// Khusus UMAHA : Angkatan dibawah 2014 di geser ke 2014 Ganjil sebagai mhs transfer, default SKS = 1
@@ -523,51 +511,32 @@ class Sync extends MY_Controller
 				// Jika transfer & sks = 0, sks diakui set minimal 1 --> agar bisa sync
 				if ($mahasiswa_pt_update['id_jns_daftar'] == '2' && $mahasiswa_pt_update['sks_diakui'] == '0') $mahasiswa_pt_update['sks_diakui'] = 1;
 				
-				// Build data format
-				$data_update = array(
-					'key'	=> array('id_pd' => $id_pd),
-					'data'	=> $mahasiswa_update
-				);
-				
-				// Build data format
-				$data_update_2 = array(
-					'key'	=> array('id_reg_pd' => $id_reg_pd),
-					'data'	=> $mahasiswa_pt_update
-				);
-				
-				// Enable for debugging only
-				// $result['message'] = ($index_proses + 1) . " {$mahasiswa_pt_update['nipd']}";
-				
-				// Update ke Feeder Mahasiswa
-				$update_result = $this->feeder->UpdateRecord($this->token, FEEDER_MAHASISWA, json_encode($data_update));
-				$update_2_result = $this->feeder->UpdateRecord($this->token, FEEDER_MAHASISWA_PT, json_encode($data_update_2));
+				// Update ke Feeder Mahasiswa menggunakan Webservice 2
+                $update_result = json_decode(
+                    $this->feederws->runWS(
+                        json_encode([
+                            'token'     => $this->token2,
+                            'act'       => 'UpdateBiodataMahasiswa',
+                            'key'       => ['id_mahasiswa' => $id_pd],
+                            'record'    => $mahasiswa_update
+                        ])),
+                    true);
 				
 				// Jika tidak ada masalah update
-				if ($update_result['result']['error_code'] == 0 && $update_2_result['result']['error_code'] == 0)
+				if ($update_result['error_code'] == 0)
 				{
 					$result['message'] = ($index_proses + 1) . " Update {$mahasiswa_pt_update['nipd']} : Berhasil";
-					
-					// Saat sandbox
-					if ($this->session->userdata('is_sandbox'))
-					{
-						$this->rdb->Query("UPDATE feeder_mahasiswa SET last_sync_sandbox = to_date('{$time_sync}','YYYY-MM-DD HH24:MI:SS') WHERE id_mhs = {$id_mhs}");
-						$this->rdb->Query("UPDATE feeder_mahasiswa_pt SET last_sync_sandbox = to_date('{$time_sync}','YYYY-MM-DD HH24:MI:SS') WHERE id_mhs = {$id_mhs}");
-					}
-					else
-					{
-						$this->rdb->Query("UPDATE feeder_mahasiswa SET last_sync = to_date('{$time_sync}','YYYY-MM-DD HH24:MI:SS') WHERE id_mhs = {$id_mhs}");
-						$this->rdb->Query("UPDATE feeder_mahasiswa_pt SET last_sync = to_date('{$time_sync}','YYYY-MM-DD HH24:MI:SS') WHERE id_mhs = {$id_mhs}");
-					}
+
+                    $this->rdb->Query("UPDATE mahasiswa SET fd_sync_on = to_date('{$time_sync}','YYYY-MM-DD HH24:MI:SS') WHERE id_mhs = {$id_mhs}");
 				}
 				// Jika terdapat masalah update
 				else
-				{
-					$result['message'] = ($index_proses + 1) . " Update {$mahasiswa_pt_update['nipd']} : Gagal.";
-					$result['message'] .= "\n({$update_result['result']['error_code']}) {$update_result['result']['error_desc']}";
-					$result['message'] .= "\n" . json_encode($data_update);
-					$result['message'] .= "\n({$update_2_result['result']['error_code']}) {$update_2_result['result']['error_desc']}";
-					$result['message'] .= "\n" . json_encode($data_update_2);
-				}
+                {
+
+                    $result['message'] = ($index_proses + 1) . " Update {$mahasiswa_pt_update['nipd']} : Gagal update mahasiswa";
+                    $result['message'] .= "\n({$update_result['error_code']}) {$update_result['error_desc']}";
+                    $result['message'] .= "\n" . json_encode($mahasiswa_update);
+                }
 				
 				// Status proses
 				$result['status'] = SYNC_STATUS_PROSES;

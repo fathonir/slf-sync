@@ -17,9 +17,9 @@
 				{/if}
 				
 				<div class="form-group">
-					<label for="wsdl" class="col-sm-2 control-label">Alamat Aplikasi Feeder</label>
+					<label for="feeder_url" class="col-sm-2 control-label">Alamat Aplikasi Feeder</label>
 					<div class="col-sm-4">
-						<input type="text" class="form-control" autocomplete="on" autofocus="true" id="wsdl" name="wsdl" placeholder="Alamat Feeder" value="" />
+						<input type="text" class="form-control" autocomplete="on" autofocus="true" id="feeder_url" name="feeder_url" placeholder="Alamat Feeder" value="" />
 					</div>
 				</div>
 				

@@ -17,31 +17,46 @@ class Auth extends MY_Controller
 	{		
 		if ($this->input->server('REQUEST_METHOD') == 'POST')
 		{
-			$wsdl		= $this->input->post('wsdl');
+			$feeder_url	= $this->input->post('feeder_url');
 			$langitan	= $this->input->post('langitan');
 			$username	= $this->input->post('username');
 			$password	= $this->input->post('password');
+
+			$ws2url = '';
 			
 			// Clean trailing slash
-			if(substr($wsdl, -1) == '/') { $wsdl = substr($wsdl, 0, -1); }
+			if(substr($feeder_url, -1) == '/') { $feeder_url = substr($feeder_url, 0, -1); }
 			if(substr($langitan, -1) == '/') { $langitan = substr($langitan, 0, -1); }
 			
 			// Mode Live
 			if ($this->input->post('mode') == 1)
 			{
-				$wsdl .= '/ws/live.php?wsdl';
+				$wsdl = $feeder_url . '/ws/live.php?wsdl';
+				$ws2url = $feeder_url . '/ws/live2.php';
 			}
 			// Mode Sandbox
 			else if ($this->input->post('mode') == 2)
 			{
-				$wsdl .= '/ws/sandbox.php?wsdl';
+				$wsdl = $feeder_url . '/ws/sandbox.php?wsdl';
+				$ws2url = $feeder_url . '/ws/sandbox2.php';
 			}
 			
 			// WS Sistem Langitan
 			$langitan .= '/modul/webservice/remotedb.php';
-			
+
+			// Get Token WSDL
 			$this->load->library('feeder', array('url' => $wsdl));
 			$result = $this->feeder->GetToken($username, $password);
+
+			// Get Token WS2
+            $this->load->library('feederws', ['url' => $ws2url]);
+            $result2 = json_decode(
+                $this->feederws->runWS(json_encode([
+                    'act' => 'GetToken',
+                    'username' => $username,
+                    'password' => $password
+                ])),
+                true);
 			
 			// Jika ketemu error
 			if (strpos($result, "ERROR") !== FALSE)
@@ -50,6 +65,12 @@ class Auth extends MY_Controller
 				$this->smarty->display('front/index.tpl');
 				return;
 			}
+			else if($result2['error_code'] !== "0")
+            {
+                $this->smarty->assign('error_message', $result2['error_desc']);
+                $this->smarty->display('front/index.tpl');
+                return;
+            }
 			else // simpan token
 			{
 				
@@ -74,7 +95,9 @@ class Auth extends MY_Controller
 						$this->session->set_userdata('is_sandbox', TRUE);
 
 					$this->session->set_userdata('wsdl', $wsdl);
+                    $this->session->set_userdata('ws2url', $ws2url);
 					$this->session->set_userdata('token', $result);
+                    $this->session->set_userdata('token2', $result2['data']['token']);
 					$this->session->set_userdata('langitan', $langitan);
 					$this->session->set_userdata('username', $username);
 					$this->session->set_userdata('password', $password);
