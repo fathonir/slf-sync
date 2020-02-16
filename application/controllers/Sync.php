@@ -3395,7 +3395,10 @@ class Sync extends MY_Controller
 		// -----------------------------------
 		if ($mode == MODE_AMBIL_DATA_LANGITAN)
 		{
-			$sql_lulusan_do_insert = file_get_contents(APPPATH.'models/sql/lulusan-do-insert.sql');
+			$sql_lulusan_do_insert_raw = file_get_contents(APPPATH.'models/sql/lulusan-do-insert.sql');
+            $sql_lulusan_do_insert = strtr($sql_lulusan_do_insert_raw, [
+				'@npsn' => $this->satuan_pendidikan['npsn'],
+			]);
 			
 			$lulusan_do_set = $this->rdb->QueryToArray($sql_lulusan_do_insert);
 			
@@ -3413,7 +3416,10 @@ class Sync extends MY_Controller
 		// -----------------------------------
 		else if ($mode == MODE_AMBIL_DATA_LANGITAN_2)
 		{
-			$sql_lulusan_do_update = file_get_contents(APPPATH.'models/sql/lulusan-do-update.sql');
+			$sql_lulusan_do_update_raw = file_get_contents(APPPATH.'models/sql/lulusan-do-update.sql');
+            $sql_lulusan_do_update = strtr($sql_lulusan_do_update_raw, [
+				'@npsn' => $this->satuan_pendidikan['npsn'],
+			]);
 			
 			$lulusan_do_set = $this->rdb->QueryToArray($sql_lulusan_do_update);
 			
@@ -3443,7 +3449,7 @@ class Sync extends MY_Controller
 			$jumlah_update = count($lulusan_do_update_set);
 			
 			// --------------------------------
-			// Proses Insert. Insert lulusan == update mahasiswa_pt keluar
+			// Proses Insert. Insert lulusan 
 			// --------------------------------
 			if ($index_proses < $jumlah_insert)
 			{
@@ -3451,28 +3457,32 @@ class Sync extends MY_Controller
 				$lulusan_do_insert = array_change_key_case($lulusan_do_insert_set[$index_proses], CASE_LOWER);
 				
 				// Simpan id_admisi & nim untuk update data di langitan
-				$id_admisi	= $lulusan_do_insert['id_admisi'];
 				$nim_mhs	= $lulusan_do_insert['nim_mhs'];
-				$id_reg_pd	= $lulusan_do_insert['id_reg_pd'];
+                $id_admisi	= $lulusan_do_insert['id_admisi'];
 				$nm_status	= $lulusan_do_insert['nm_status_pengguna'];
 				
 				// Hilangkan yang tidak diperlukan di tabel mahasiswa_pt
+                unset($lulusan_do_insert['nim_mhs']);
 				unset($lulusan_do_insert['id_admisi']);
-				unset($lulusan_do_insert['nim_mhs']);
-				unset($lulusan_do_insert['id_reg_pd']);
 				unset($lulusan_do_insert['nm_status_pengguna']);
-				
-				// Build data format
-				$data_update = array(
-					'key'	=> array('id_reg_pd' => $id_reg_pd),
-					'data'	=> $lulusan_do_insert
-				);
+                
+                // reformat data
+                $lulusan_do_insert['ipk'] = floatval($lulusan_do_insert['ipk']);
 				
 				// Update ke Feeder Mahasiswa PT
-				$update_result = $this->feeder->UpdateRecord($this->token, FEEDER_MAHASISWA_PT, json_encode($data_update));
+				//$update_result = $this->feeder->UpdateRecord($this->token, FEEDER_MAHASISWA_PT, json_encode($data_update));
+                
+                // Insert ke Feeder Mahasiswa Lulus DO menggunakan Webservice 2
+                $insert_result = json_decode(
+                    $this->feederws->runWS(json_encode([
+                        'token'     => $this->token2,
+                        'act'       => 'InsertMahasiswaLulusDO',
+                        'record'    => $lulusan_do_insert
+                    ])),
+                    true);
 				
 				// Jika berhasil update, tidak ada error
-				if ($update_result['result']['error_code'] == 0)
+				if ($insert_result['error_code'] == 0)
 				{
 					// Pesan Insert lulusan, tampilkan nim
 					$result['message'] = ($index_proses + 1) . " Insert {$nim_mhs} {$nm_status} : Berhasil";
@@ -3483,7 +3493,9 @@ class Sync extends MY_Controller
 				else // saat update mahasiswa_pt gagal
 				{
 					// Tampilkan pesan gagal
-					$result['message'] = ($index_proses + 1) . " Insert {$nim_mhs} {$nm_status} : " . json_encode($update_result['result']) . "\n" . json_encode($data_update);
+					$result['message'] = ($index_proses + 1) . " Insert {$nim_mhs} {$nm_status} error : ";
+                    $result['message'] .= $insert_result['error_desc'] . "\n" ; 
+                    $result['message'] .= json_encode($lulusan_do_insert);
 				}
 				
 				$result['status'] = SYNC_STATUS_PROSES;
