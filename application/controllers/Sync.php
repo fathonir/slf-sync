@@ -3274,7 +3274,13 @@ class Sync extends MY_Controller
 				else // saat insert kuliah_mahasiswa gagal
 				{
 					// Pesan Insert, NIM Mahasiswa
-					$result['message'] = ($index_proses + 1) . " Insert {$nim_mhs} : " . $insert_result['error_desc'];
+					$result['message'] = ($index_proses + 1) . " Insert {$nim_mhs} : Gagal. ";
+                    
+                    // Jika error_code 0, maka error berada di dalam variable result
+                    if ($insert_result['error_code'] == 0)
+                        $result['message'] .= "({$insert_result['result']['error_code']}) {$insert_result['result']['error_desc']}";
+                    else 
+                        $result['message'] .= "({$insert_result['error_code']}) {$insert_result['error_desc']}";
 				}
 				
 				$result['status'] = SYNC_STATUS_PROSES;
