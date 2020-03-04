@@ -3258,11 +3258,6 @@ class Sync extends MY_Controller
 				// Hilangkan yang tidak diperlukan di tabel kuliah_mahasiswa
 				unset($kuliah_mahasiswa_insert['id_mhs_status']);
 				unset($kuliah_mahasiswa_insert['nim_mhs']);
-			
-				// Cleansing data
-				if ($kuliah_mahasiswa_insert['sks_smt'] > 30) $kuliah_mahasiswa_insert['sks_smt'] = 30;
-				
-				// print_r($kuliah_mahasiswa_insert); exit();
 				
 				// Entri ke Feeder Kuliah Mahasiswa
 				$insert_result = $this->feeder->InsertRecord($this->token, FEEDER_KULIAH_MAHASISWA, json_encode($kuliah_mahasiswa_insert));
@@ -3279,7 +3274,7 @@ class Sync extends MY_Controller
 				else // saat insert kuliah_mahasiswa gagal
 				{
 					// Pesan Insert, NIM Mahasiswa
-					$result['message'] = ($index_proses + 1) . " Insert {$nim_mhs} : " . json_encode($insert_result['result']);
+					$result['message'] = ($index_proses + 1) . " Insert {$nim_mhs} : " . $insert_result['error_desc'];
 				}
 				
 				$result['status'] = SYNC_STATUS_PROSES;
@@ -3330,7 +3325,7 @@ class Sync extends MY_Controller
 				else
 				{
 					$result['message'] = ($index_proses + 1) . " Update {$nim_mhs} : Gagal. ";
-					$result['message'] .= "({$update_result['result']['error_code']}) {$update_result['result']['error_desc']}";
+					$result['message'] .= "({$update_result['error_code']}) {$update_result['error_desc']}";
 					$result['message'] .= "\n" . json_encode($data_update);
 				}
 				

@@ -113,7 +113,7 @@ class Feeder
 		
 		if ($return['error_code'] != 0)
 		{
-			show_error($return['error_desc'].'<br/><a class="btn btn-default" href="'. site_url('auth/logout').'">Logout</a>');
+			// show_error($return['error_desc'].'<br/><a class="btn btn-default" href="'. site_url('auth/logout').'">Logout</a>');
 		}
 		
 		return $return;
@@ -131,7 +131,7 @@ class Feeder
 		
 		if ($return['error_code'] != 0)
 		{
-			show_error($return['error_desc'].'<br/><a class="btn btn-default" href="'. site_url('auth/logout').'">Logout</a>');
+			// show_error($return['error_desc'].'<br/><a class="btn btn-default" href="'. site_url('auth/logout').'">Logout</a>');
 		}
 		
 		return $return;
