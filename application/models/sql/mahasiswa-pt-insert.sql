@@ -30,7 +30,8 @@ SELECT
 	/* Semester Mulai */
 	(SELECT thn_akademik_semester||decode(group_semester, 'Ganjil','1','Genap','2') FROM admisi A
 	JOIN semester s ON s.id_semester = a.id_semester
-	WHERE A.id_jalur IS NOT NULL and a.id_mhs = m.id_mhs) as mulai_smt
+	WHERE A.id_jalur IS NOT NULL and a.id_mhs = m.id_mhs) as mulai_smt,
+	m.biaya_masuk as biaya_masuk_kuliah
 
 FROM mahasiswa m
 JOIN pengguna p ON p.id_pengguna = m.id_pengguna
