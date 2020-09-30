@@ -1489,7 +1489,7 @@ class Sync extends MY_Controller
 			JOIN perguruan_tinggi pt ON pt.id_perguruan_tinggi = s.id_perguruan_tinggi
 			WHERE 
 				pt.npsn = '{$this->satuan_pendidikan['npsn']}' AND 
-				s.thn_akademik_semester||decode(upper(nm_semester), 'GANJIL','1','GENAP','2') = '{$id_smt}'");
+				s.fd_id_smt = '{$id_smt}'");
 		$id_semester = $semester_langitan[0]['ID_SEMESTER'];
 		
 		// Ambil data mata kuliah
