@@ -49,7 +49,8 @@
 						<div class="col-md-4">
 							<select name="semester" class="form-control" required>
 								<option value=""></option>
-								{for $tahun=date('Y') to date('Y')-6 step -1}
+								{for $tahun=date('Y') to date('Y')-7 step -1}
+									<option value="{$tahun}3">{$tahun}/{$tahun + 1} Pendek</option>
 									<option value="{$tahun}2">{$tahun}/{$tahun + 1} Genap</option>
 									<option value="{$tahun}1">{$tahun}/{$tahun + 1} Ganjil</option>
 								{/for}
