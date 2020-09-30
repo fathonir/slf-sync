@@ -2,7 +2,7 @@ SELECT
     ms.id_mhs_status, m.nim_mhs,
     '@id_smt' as id_smt, m.fd_id_reg_pd as id_reg_pd, sp.fd_id_stat_mhs as id_stat_mhs, 
     ips, sks_semester as sks_smt, ipk, sks_total, 
-    case when right(s.fd_id_smt, 1) = '3' then 240000 /* Semester Pendek Fix Rp 240.0000 */
+    case when substr(s.fd_id_smt, -1) = '3' then 240000 /* Semester Pendek Fix Rp 240.0000 */
     else
         CASE sp.fd_id_stat_mhs WHEN 'C' THEN 0 ELSE tm.total_besar_biaya END
     end
