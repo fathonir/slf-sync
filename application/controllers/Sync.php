@@ -1534,7 +1534,7 @@ class Sync extends MY_Controller
 				JOIN perguruan_tinggi pt ON pt.id_perguruan_tinggi = s.id_perguruan_tinggi
 				WHERE 
 					pt.npsn = '{$this->satuan_pendidikan['npsn']}' AND 
-					s.thn_akademik_semester||decode(upper(nm_semester), 'GANJIL','1','GENAP','2') = '{$id_smt}'");
+ 					s.fd_id_smt = '{$id_smt}'");
 			$id_semester = $semester_langitan[0]['ID_SEMESTER'];
 			
 			// Ambil data kelas kuliah insert
@@ -1575,7 +1575,7 @@ class Sync extends MY_Controller
 				JOIN perguruan_tinggi pt ON pt.id_perguruan_tinggi = s.id_perguruan_tinggi
 				WHERE 
 					pt.npsn = '{$this->satuan_pendidikan['npsn']}' AND 
-					s.thn_akademik_semester||decode(upper(nm_semester), 'GANJIL','1','GENAP','2') = '{$id_smt}'");
+					s.fd_id_smt = '{$id_smt}'");
 			$id_semester = $semester_langitan[0]['ID_SEMESTER'];
 			
 			// Ambil data kelas kuliah yang akan di update
@@ -2618,8 +2618,8 @@ class Sync extends MY_Controller
 				else
 				{
 					$result['message'] = ($index_proses + 1) . " Delete {$mhs} Nilai: {$nilai_huruf} ({$nilai_angka}) : Gagal. ";
-					$result['message'] .= "({$update_result['result']['error_code']}) {$update_result['result']['error_desc']}";
-					$result['message'] .= "\n" . json_encode($data_update_json);
+					$result['message'] .= "({$delete_result['result']['error_code']}) {$delete_result['result']['error_desc']}";
+					$result['message'] .= "\n" . json_encode($data_delete_json);
 				}
 				
 				// Status proses
@@ -3039,8 +3039,8 @@ class Sync extends MY_Controller
 				$id_ekuivalensi		= $data_delete['id_ekuivalensi'];
 				
 				// Hilangkan variabel tak dibutuhkan
-				unset($data_update['id_pengambilan_mk']);
-				unset($data_update['mhs']);
+				unset($data_delete['id_pengambilan_mk']);
+				unset($data_delete['mhs']);
 				
 				// Build data format
 				$data_delete_json = array(
@@ -3061,8 +3061,8 @@ class Sync extends MY_Controller
 				else
 				{
 					$result['message'] = ($index_proses + 1) . " Delete {$mhs} {$kode_mk_asal} {$nm_mk_asal} ({$sks_asal} SKS) = {$nilai_huruf_asal} diakui ({$sks_diakui} SKS) {$nilai_huruf_diakui} : Gagal. ";
-					$result['message'] .= "({$update_result['result']['error_code']}) {$update_result['result']['error_desc']}";
-					$result['message'] .= "\n" . json_encode($data_update_json);
+					$result['message'] .= "({$delete_result['result']['error_code']}) {$delete_result['result']['error_desc']}";
+					$result['message'] .= "\n" . json_encode($data_delete_json);
 				}
 				
 				// Status proses
@@ -3523,10 +3523,10 @@ class Sync extends MY_Controller
 				$nm_status	= $lulusan_do_update['nm_status_pengguna'];
 				
 				// Hilangkan yang tidak diperlukan di tabel mahasiswa_pt
-				unset($lulusan_do_insert['id_admisi']);
-				unset($lulusan_do_insert['nim_mhs']);
-				unset($lulusan_do_insert['id_reg_pd']);
-				unset($lulusan_do_insert['nm_status_pengguna']);
+				unset($lulusan_do_update['id_admisi']);
+				unset($lulusan_do_update['nim_mhs']);
+				unset($lulusan_do_update['id_reg_pd']);
+				unset($lulusan_do_update['nm_status_pengguna']);
 				
 				// Build data format
 				$data_update = array(
@@ -3663,7 +3663,7 @@ class Sync extends MY_Controller
 				JOIN perguruan_tinggi pt ON pt.id_perguruan_tinggi = s.id_perguruan_tinggi
 				WHERE 
 					pt.npsn = '{$this->satuan_pendidikan['npsn']}' AND 
-					s.thn_akademik_semester||decode(upper(nm_semester), 'GANJIL','1','GENAP','2') = '{$id_smt}'");
+					s.fd_id_smt = '{$id_smt}'");
 				
 			$this->smarty->assign('jenis_sinkronisasi', 'Kelas Perkuliahan '.$program_studi_set[0]['NM_JENJANG'].' '.$program_studi_set[0]['NM_PROGRAM_STUDI'].' - '.$semester_langitan[0]['THN'].'/'. ($semester_langitan[0]['THN'] + 1).' '.$semester_langitan[0]['NM_SEMESTER']);
 			$this->smarty->assign('url', site_url('sync/proses/'.$mode));
@@ -3687,7 +3687,7 @@ class Sync extends MY_Controller
 				JOIN perguruan_tinggi pt ON pt.id_perguruan_tinggi = s.id_perguruan_tinggi
 				WHERE 
 					pt.npsn = '{$this->satuan_pendidikan['npsn']}' AND 
-					s.thn_akademik_semester||decode(upper(nm_semester), 'GANJIL','1','GENAP','2') = '{$id_smt}'");
+					s.fd_id_smt = '{$id_smt}'");
 				
 			$this->smarty->assign('jenis_sinkronisasi', 'Dosen Kelas '.$program_studi_set[0]['NM_JENJANG'].' '.$program_studi_set[0]['NM_PROGRAM_STUDI'].' - '.$semester_langitan[0]['THN'].'/'. ($semester_langitan[0]['THN'] + 1).' '.$semester_langitan[0]['NM_SEMESTER']);
 			$this->smarty->assign('url', site_url('sync/proses/'.$mode));
@@ -3716,7 +3716,7 @@ class Sync extends MY_Controller
 				JOIN perguruan_tinggi pt ON pt.id_perguruan_tinggi = s.id_perguruan_tinggi
 				WHERE 
 					pt.npsn = '{$this->satuan_pendidikan['npsn']}' AND 
-					s.thn_akademik_semester||decode(upper(nm_semester), 'GANJIL','1','GENAP','2') = '{$id_smt}'");
+					s.fd_id_smt = '{$id_smt}'");
 			
 			$this->smarty->assign('jenis_sinkronisasi', "Nilai Perkuliahan {$kelas_set[0]['NM_JENJANG']} {$kelas_set[0]['NM_PROGRAM_STUDI']} - {$kelas_set[0]['NM_KELAS']} {$semester_langitan[0]['THN']}/" . ($semester_langitan[0]['THN'] + 1)." {$semester_langitan[0]['NM_SEMESTER']}");
 			$this->smarty->assign('url', site_url('sync/proses/'.$mode));
@@ -3740,7 +3740,7 @@ class Sync extends MY_Controller
 				JOIN perguruan_tinggi pt ON pt.id_perguruan_tinggi = s.id_perguruan_tinggi
 				WHERE 
 					pt.npsn = '{$this->satuan_pendidikan['npsn']}' AND 
-					s.thn_akademik_semester||decode(upper(nm_semester), 'GANJIL','1','GENAP','2') = '{$id_smt}'");
+					s.fd_id_smt = '{$id_smt}'");
 					
 			$this->smarty->assign('jenis_sinkronisasi', 'Nilai Perkuliahan '.$program_studi_set[0]['NM_JENJANG'].' '.$program_studi_set[0]['NM_PROGRAM_STUDI'].' - '.$semester_langitan[0]['THN'].'/'. ($semester_langitan[0]['THN'] + 1).' '.$semester_langitan[0]['NM_SEMESTER']);
 			$this->smarty->assign('url', site_url('sync/proses/'.$mode));
