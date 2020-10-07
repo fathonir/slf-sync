@@ -4,9 +4,9 @@ SELECT
     ips, sks_semester as sks_smt, ipk, sks_total, 
     case when substr(s.fd_id_smt, -1) = '3' then 240000 /* Semester Pendek Fix Rp 240.0000 */
     else
-        CASE sp.fd_id_stat_mhs WHEN 'C' THEN 0 ELSE tm.total_besar_biaya END
-    end
-    as biaya_smt
+        CASE sp.fd_id_stat_mhs WHEN 'C'
+        THEN 0 ELSE coalesce(tm.total_besar_biaya, ms.biaya_semester) END /* Ambil dari biaya_semester, jika tidak ada tagihan */
+    end as biaya_smt
 FROM mahasiswa_status ms
 JOIN mahasiswa m ON m.id_mhs = ms.id_mhs
 LEFT JOIN status_pengguna sp ON sp.id_status_pengguna = ms.id_status_pengguna
