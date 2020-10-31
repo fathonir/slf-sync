@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "31ef2dfaccf850cd02156e604164f796",
+    "content-hash": "c4b33c8a1c280118ad60fda647c20ce6",
     "packages": [
         {
             "name": "econea/nusoap",
-            "version": "v0.9.6",
+            "version": "v0.9.10",
             "source": {
                 "type": "git",
-                "url": "https://github.com/econea/nusoap.git",
-                "reference": "84ac83bc884c477e6614fe8cbe2bf8858b5f75ff"
+                "url": "https://github.com/pwnlabs/nusoap.git",
+                "reference": "851d7014944cdb5823890a718870691c20442b8a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/econea/nusoap/zipball/84ac83bc884c477e6614fe8cbe2bf8858b5f75ff",
-                "reference": "84ac83bc884c477e6614fe8cbe2bf8858b5f75ff",
+                "url": "https://api.github.com/repos/pwnlabs/nusoap/zipball/851d7014944cdb5823890a718870691c20442b8a",
+                "reference": "851d7014944cdb5823890a718870691c20442b8a",
                 "shasum": ""
             },
             "require": {
@@ -29,7 +29,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-0.9.x": "0.9.7.x-dev",
+                    "dev-master": "0.10.x-dev",
                     "dev-develop": "1.0.x-dev"
                 }
             },
@@ -48,30 +48,49 @@
                     "homepage": "https://f3l1x.io"
                 }
             ],
-            "description": "NuSOAP fixed for PHP 5.4 - 7.1",
-            "homepage": "https://github.com/econea/nusoap",
+            "description": "Fixed NuSOAP for PHP 5.4 - 7.4",
+            "homepage": "https://github.com/pwnlabs/nusoap",
             "keywords": [
+                "client",
+                "http",
                 "nusoap",
-                "soap"
+                "php",
+                "soap",
+                "transport",
+                "xml"
             ],
-            "time": "2018-04-19T05:28:20+00:00"
+            "funding": [
+                {
+                    "url": "https://contributte.org/partners.html",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/f3l1x",
+                    "type": "github"
+                }
+            ],
+            "time": "2020-07-17T10:24:41+00:00"
         },
         {
             "name": "smarty/smarty",
-            "version": "v3.1.33",
+            "version": "v3.1.36",
             "source": {
                 "type": "git",
                 "url": "https://github.com/smarty-php/smarty.git",
-                "reference": "dd55b23121e55a3b4f1af90a707a6c4e5969530f"
+                "reference": "fd148f7ade295014fff77f89ee3d5b20d9d55451"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/smarty-php/smarty/zipball/dd55b23121e55a3b4f1af90a707a6c4e5969530f",
-                "reference": "dd55b23121e55a3b4f1af90a707a6c4e5969530f",
+                "url": "https://api.github.com/repos/smarty-php/smarty/zipball/fd148f7ade295014fff77f89ee3d5b20d9d55451",
+                "reference": "fd148f7ade295014fff77f89ee3d5b20d9d55451",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.2"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "6.4.1",
+                "smarty/smarty-lexer": "^3.1"
             },
             "type": "library",
             "extra": {
@@ -80,8 +99,8 @@
                 }
             },
             "autoload": {
-                "files": [
-                    "libs/bootstrap.php"
+                "classmap": [
+                    "libs/"
                 ]
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -107,7 +126,7 @@
             "keywords": [
                 "templating"
             ],
-            "time": "2018-09-12T20:54:16+00:00"
+            "time": "2020-04-14T14:44:26+00:00"
         }
     ],
     "packages-dev": [
@@ -148,7 +167,9 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=5.2.4"
+        "php": ">=5.2.4",
+        "ext-json": "*"
     },
-    "platform-dev": []
+    "platform-dev": [],
+    "plugin-api-version": "1.1.0"
 }
