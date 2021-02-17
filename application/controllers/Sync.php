@@ -1,7 +1,7 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
 /**
- * @property CI_Remotedb $rdb Remote DB Sistem Langitan
+ * @property Remotedb $rdb Remote DB Sistem Langitan
  * @property string $token Token webservice
  * @property string $token2 Token webservice 2
  * @property string $npsn Kode Perguruan Tinggi
