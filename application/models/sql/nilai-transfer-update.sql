@@ -8,11 +8,11 @@ select
 	pmk.id_pengambilan_mk,
 	m.fd_id_reg_pd as id_reg_pd,
 	mk.fd_id_mk as id_mk,
-	substr(mk.kd_mata_kuliah, 1, 20) as kode_mk_asal,
-	substr(mk.nm_mata_kuliah, 1, 200) as nm_mk_asal,
-	mk.kredit_semester as sks_asal,
-	mk.kredit_semester as sks_diakui,
-	pmk.nilai_huruf as nilai_huruf_asal,
+	coalesce(pmk.kd_mata_kuliah_asal, substr(mk.kd_mata_kuliah, 1, 20)) as kode_mk_asal,
+	coalesce(pmk.nm_mata_kuliah_asal, substr(mk.nm_mata_kuliah, 1, 200)) as nm_mk_asal,
+	coalesce(pmk.kredit_asal, mk.kredit_semester) as sks_asal,
+	coalesce(pmk.kredit_diakui, mk.kredit_semester) as sks_diakui,
+	pmk.nilai_huruf_asal,
 	pmk.nilai_huruf as nilai_huruf_diakui,
 	nvl(sn.nilai_standar_nilai, 0) as nilai_angka_diakui
 from pengambilan_mk pmk
