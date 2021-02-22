@@ -2717,7 +2717,7 @@ class Sync extends MY_Controller
 				$data_insert = array_change_key_case($data_insert_set[$index_proses], CASE_LOWER);
 				
 				// Simpan untuk tampilan sync
-				$id_pengambilan_mk	= $data_insert['id_pengambilan_mk'];
+				$id_pengambilan_mk	= $data_insert['id_pengambilan_mk_konversi'];
 				$mhs				= $data_insert['mhs'];
 				$kode_mk_asal		= $data_insert['kode_mk_asal'];
 				$nm_mk_asal			= $data_insert['nm_mk_asal'];
@@ -2727,7 +2727,7 @@ class Sync extends MY_Controller
 				$nilai_huruf_diakui	= $data_insert['nilai_huruf_diakui'];
 				
 				// Hilangkan variabel tak dibutuhkan
-				unset($data_insert['id_pengambilan_mk']);
+				unset($data_insert['id_pengambilan_mk_konversi']);
 				unset($data_insert['mhs']);
 				
 				// Entri ke Feeder nilai transfer
@@ -2740,7 +2740,7 @@ class Sync extends MY_Controller
 					$result['message'] = ($index_proses + 1) . " Insert {$mhs} {$kode_mk_asal} {$nm_mk_asal} ({$sks_asal} SKS) = {$nilai_huruf_asal} diakui ({$sks_diakui} SKS) {$nilai_huruf_diakui} : Berhasil";
 					
 					// Update status sync
-					$this->rdb->Query("UPDATE pengambilan_mk SET fd_id_ekuivalensi = '{$insert_result['result']['id_ekuivalensi']}', fd_sync_on = sysdate WHERE id_pengambilan_mk = {$id_pengambilan_mk}");
+					$this->rdb->Query("UPDATE pengambilan_mk_konversi SET fd_id_ekuivalensi = '{$insert_result['result']['id_ekuivalensi']}', fd_sync_on = sysdate WHERE id_pengambilan_mk_konversi = {$id_pengambilan_mk}");
 				}
 				else // saat insert nilai transfer gagal
 				{
@@ -2767,7 +2767,7 @@ class Sync extends MY_Controller
 				$data_update = array_change_key_case($data_update_set[$index_proses], CASE_LOWER);
 				
 				// Simpan untuk tampilan sync
-				$id_pengambilan_mk	= $data_update['id_pengambilan_mk'];
+				$id_pengambilan_mk	= $data_update['id_pengambilan_mk_konversi'];
 				$mhs				= $data_update['mhs'];
 				$kode_mk_asal		= $data_update['kode_mk_asal'];
 				$nm_mk_asal			= $data_update['nm_mk_asal'];
@@ -2778,7 +2778,7 @@ class Sync extends MY_Controller
 				$id_ekuivalensi		= $data_update['id_ekuivalensi'];
 				
 				// Hilangkan variabel tak dibutuhkan
-				unset($data_update['id_pengambilan_mk']);
+				unset($data_update['id_pengambilan_mk_konversi']);
 				unset($data_update['mhs']);
 				unset($data_update['id_ekuivalensi']);
 				
@@ -2797,7 +2797,7 @@ class Sync extends MY_Controller
 					$result['message'] = ($index_proses + 1) . " Update {$mhs} {$kode_mk_asal} {$nm_mk_asal} ({$sks_asal} SKS) = {$nilai_huruf_asal} diakui ({$sks_diakui} SKS) {$nilai_huruf_diakui} : Berhasil";
 					
 					// Update status sync
-					$this->rdb->Query("UPDATE pengambilan_mk SET fd_sync_on = sysdate WHERE id_pengambilan_mk = {$id_pengambilan_mk}");
+					$this->rdb->Query("UPDATE pengambilan_mk_konversi SET fd_sync_on = sysdate WHERE id_pengambilan_mk_konversi = {$id_pengambilan_mk}");
 				}
 				else
 				{
