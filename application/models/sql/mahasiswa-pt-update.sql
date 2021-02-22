@@ -17,10 +17,8 @@ SELECT
 	WHERE A.id_jalur IS NOT NULL and a.id_mhs = m.id_mhs) as id_jns_daftar,
 
 	/* Total SKS Diakui */
-	(SELECT coalesce(sum(kredit_semester),0) 
-	FROM kurikulum_mk 
-	JOIN pengambilan_mk pmk on pmk.id_kurikulum_mk = kurikulum_mk.id_kurikulum_mk
-	WHERE pmk.id_mhs = m.id_mhs and pmk.status_transfer = 1) as sks_diakui,
+	(SELECT coalesce(sum(sks_diakui),0) FROM pengambilan_mk_konversi pmk
+	WHERE pmk.ID_MHS = m.id_mhs) as sks_diakui,
 
 	m.nim_mhs as nipd,
 	m.thn_angkatan_mhs||'-09-01' as tgl_masuk_sp,  /* Default tanggal masuk 1 September */
