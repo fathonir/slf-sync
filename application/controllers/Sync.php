@@ -512,31 +512,31 @@ class Sync extends MY_Controller
 				if ($mahasiswa_pt_update['id_jns_daftar'] == '2' && $mahasiswa_pt_update['sks_diakui'] == '0') $mahasiswa_pt_update['sks_diakui'] = 1;
 				
 				// Update ke Feeder Mahasiswa menggunakan Webservice 2
-                $update_result = json_decode(
-                    $this->feederws->runWS(
-                        json_encode([
-                            'token'     => $this->token2,
-                            'act'       => 'UpdateBiodataMahasiswa',
-                            'key'       => ['id_mahasiswa' => $id_pd],
-                            'record'    => $mahasiswa_update
-                        ])),
-                    true);
+				$update_result = json_decode(
+					$this->feederws->runWS(
+						json_encode([
+							'token'     => $this->token2,
+							'act'       => 'UpdateBiodataMahasiswa',
+							'key'       => ['id_mahasiswa' => $id_pd],
+							'record'    => $mahasiswa_update
+						])),
+					true);
 				
 				// Jika tidak ada masalah update
 				if ($update_result['error_code'] == 0)
 				{
 					$result['message'] = ($index_proses + 1) . " Update {$mahasiswa_pt_update['nipd']} : Berhasil";
 
-                    $this->rdb->Query("UPDATE mahasiswa SET fd_sync_on = to_date('{$time_sync}','YYYY-MM-DD HH24:MI:SS') WHERE id_mhs = {$id_mhs}");
+					$this->rdb->Query("UPDATE mahasiswa SET fd_sync_on = to_date('{$time_sync}','YYYY-MM-DD HH24:MI:SS') WHERE id_mhs = {$id_mhs}");
 				}
 				// Jika terdapat masalah update
 				else
-                {
+				{
 
-                    $result['message'] = ($index_proses + 1) . " Update {$mahasiswa_pt_update['nipd']} : Gagal update mahasiswa";
-                    $result['message'] .= "\n({$update_result['error_code']}) {$update_result['error_desc']}";
-                    $result['message'] .= "\n" . json_encode($mahasiswa_update);
-                }
+					$result['message'] = ($index_proses + 1) . " Update {$mahasiswa_pt_update['nipd']} : Gagal update mahasiswa";
+					$result['message'] .= "\n({$update_result['error_code']}) {$update_result['error_desc']}";
+					$result['message'] .= "\n" . json_encode($mahasiswa_update);
+				}
 				
 				// Status proses
 				$result['status'] = SYNC_STATUS_PROSES;
@@ -664,7 +664,7 @@ class Sync extends MY_Controller
 		// -----------------------------------
 		// Ambil data untuk Update
 		// -----------------------------------
-	    else if ($mode == MODE_AMBIL_DATA_LANGITAN_2)
+		else if ($mode == MODE_AMBIL_DATA_LANGITAN_2)
 		{
 			// Filter Prodi & Angkatan
 			$kode_prodi = $this->input->post('kode_prodi');
@@ -1534,7 +1534,7 @@ class Sync extends MY_Controller
 				JOIN perguruan_tinggi pt ON pt.id_perguruan_tinggi = s.id_perguruan_tinggi
 				WHERE 
 					pt.npsn = '{$this->satuan_pendidikan['npsn']}' AND 
- 					s.fd_id_smt = '{$id_smt}'");
+					s.fd_id_smt = '{$id_smt}'");
 			$id_semester = $semester_langitan[0]['ID_SEMESTER'];
 			
 			// Ambil data kelas kuliah insert
@@ -3275,12 +3275,12 @@ class Sync extends MY_Controller
 				{
 					// Pesan Insert, NIM Mahasiswa
 					$result['message'] = ($index_proses + 1) . " Insert {$nim_mhs} : Gagal. ";
-                    
-                    // Jika error_code 0, maka error berada di dalam variable result
-                    if ($insert_result['error_code'] == 0)
-                        $result['message'] .= "({$insert_result['result']['error_code']}) {$insert_result['result']['error_desc']}";
-                    else 
-                        $result['message'] .= "({$insert_result['error_code']}) {$insert_result['error_desc']}";
+
+					// Jika error_code 0, maka error berada di dalam variable result
+					if ($insert_result['error_code'] == 0)
+						$result['message'] .= "({$insert_result['result']['error_code']}) {$insert_result['result']['error_desc']}";
+					else
+						$result['message'] .= "({$insert_result['error_code']}) {$insert_result['error_desc']}";
 				}
 				
 				$result['status'] = SYNC_STATUS_PROSES;
@@ -3331,8 +3331,12 @@ class Sync extends MY_Controller
 				else
 				{
 					$result['message'] = ($index_proses + 1) . " Update {$nim_mhs} : Gagal. ";
-					$result['message'] .= "({$update_result['error_code']}) {$update_result['error_desc']}";
-					$result['message'] .= "\n" . json_encode($data_update);
+
+					// Jika error_code 0, maka error berada di dalam variable result
+					if ($update_result['error_code'] == 0)
+						$result['message'] .= "({$update_result['result']['error_code']}) {$update_result['result']['error_desc']}";
+					else
+						$result['message'] .= "({$update_result['error_code']}) {$update_result['error_desc']}";
 				}
 				
 				// Status proses
@@ -3397,7 +3401,7 @@ class Sync extends MY_Controller
 		if ($mode == MODE_AMBIL_DATA_LANGITAN)
 		{
 			$sql_lulusan_do_insert_raw = file_get_contents(APPPATH.'models/sql/lulusan-do-insert.sql');
-            $sql_lulusan_do_insert = strtr($sql_lulusan_do_insert_raw, [
+			$sql_lulusan_do_insert = strtr($sql_lulusan_do_insert_raw, [
 				'@npsn' => $this->satuan_pendidikan['npsn'],
 			]);
 			
@@ -3418,7 +3422,7 @@ class Sync extends MY_Controller
 		else if ($mode == MODE_AMBIL_DATA_LANGITAN_2)
 		{
 			$sql_lulusan_do_update_raw = file_get_contents(APPPATH.'models/sql/lulusan-do-update.sql');
-            $sql_lulusan_do_update = strtr($sql_lulusan_do_update_raw, [
+			$sql_lulusan_do_update = strtr($sql_lulusan_do_update_raw, [
 				'@npsn' => $this->satuan_pendidikan['npsn'],
 			]);
 			
@@ -3459,28 +3463,28 @@ class Sync extends MY_Controller
 				
 				// Simpan id_admisi & nim untuk update data di langitan
 				$nim_mhs	= $lulusan_do_insert['nim_mhs'];
-                $id_admisi	= $lulusan_do_insert['id_admisi'];
+				$id_admisi	= $lulusan_do_insert['id_admisi'];
 				$nm_status	= $lulusan_do_insert['nm_status_pengguna'];
 				
 				// Hilangkan yang tidak diperlukan di tabel mahasiswa_pt
-                unset($lulusan_do_insert['nim_mhs']);
+				unset($lulusan_do_insert['nim_mhs']);
 				unset($lulusan_do_insert['id_admisi']);
 				unset($lulusan_do_insert['nm_status_pengguna']);
-                
-                // reformat data
-                $lulusan_do_insert['ipk'] = floatval($lulusan_do_insert['ipk']);
+
+				// reformat data
+				$lulusan_do_insert['ipk'] = floatval($lulusan_do_insert['ipk']);
 				
 				// Update ke Feeder Mahasiswa PT
 				//$update_result = $this->feeder->UpdateRecord($this->token, FEEDER_MAHASISWA_PT, json_encode($data_update));
-                
-                // Insert ke Feeder Mahasiswa Lulus DO menggunakan Webservice 2
-                $insert_result = json_decode(
-                    $this->feederws->runWS(json_encode([
-                        'token'     => $this->token2,
-                        'act'       => 'InsertMahasiswaLulusDO',
-                        'record'    => $lulusan_do_insert
-                    ])),
-                    true);
+
+				// Insert ke Feeder Mahasiswa Lulus DO menggunakan Webservice 2
+				$insert_result = json_decode(
+					$this->feederws->runWS(json_encode([
+						'token'     => $this->token2,
+						'act'       => 'InsertMahasiswaLulusDO',
+						'record'    => $lulusan_do_insert
+					])),
+					true);
 				
 				// Jika berhasil update, tidak ada error
 				if ($insert_result['error_code'] == 0)
@@ -3495,8 +3499,8 @@ class Sync extends MY_Controller
 				{
 					// Tampilkan pesan gagal
 					$result['message'] = ($index_proses + 1) . " Insert {$nim_mhs} {$nm_status} error : ";
-                    $result['message'] .= $insert_result['error_desc'] . "\n" ; 
-                    $result['message'] .= json_encode($lulusan_do_insert);
+					$result['message'] .= $insert_result['error_desc'] . "\n" ;
+					$result['message'] .= json_encode($lulusan_do_insert);
 				}
 				
 				$result['status'] = SYNC_STATUS_PROSES;
