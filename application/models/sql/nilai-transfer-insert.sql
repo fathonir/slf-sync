@@ -14,13 +14,16 @@ select
     pmk.sks_diakui,
     pmk.nilai_huruf_asal,
     pmk.nilai_huruf_diakui,
-    nvl(sn.nilai_standar_nilai, 0) as nilai_angka_diakui
+    nvl(sn.nilai_standar_nilai, 0) as nilai_angka_diakui,
+    pt_asal.fd_id_sp as id_sp
 from pengambilan_mk_konversi pmk
 join mahasiswa m on m.id_mhs = pmk.id_mhs
 join pengguna p on p.id_pengguna = m.id_pengguna
 join perguruan_tinggi pt on pt.id_perguruan_tinggi = p.id_perguruan_tinggi
 join mata_kuliah mk on mk.id_mata_kuliah = pmk.id_mata_kuliah
 left join standar_nilai sn on sn.nm_standar_nilai = pmk.nilai_huruf_diakui
+join admisi a on a.id_mhs = m.id_mhs and a.id_jalur is not null
+join perguruan_tinggi pt_asal on pt_asal.npsn = a.kode_pt_asal
 where
     pt.npsn = '@npsn'
     and m.fd_id_reg_pd is not null
